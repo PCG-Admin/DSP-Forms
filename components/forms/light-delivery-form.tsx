@@ -560,7 +560,7 @@ export function LightDeliveryForm() {
             and assess the condition of the vehicle.
           </p>
           <p className="mt-2 text-sm text-amber-700">
-            Outcome to be detailed with an "Ok" if in order and a "Def" if defective. Defective outcomes
+            Outcome to be detailed with an &quot;Ok&quot; if in order and a &quot;Def&quot; if defective. Defective outcomes
             to be documented below.
           </p>
         </CardContent>
@@ -755,30 +755,27 @@ export function LightDeliveryForm() {
         </CardContent>
       </Card>
 
-      {/* ===== DEFECTS SECTION ===== */}
-      {hasDefects && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Defects Detected
-            </CardTitle>
-            <CardDescription>
-              Please provide details for all defects identified above.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              value={defectDetails}
-              onChange={(e) => setDefectDetails(e.target.value)}
-              placeholder="Describe the defects in detail..."
-              rows={4}
-              className="resize-none"
-              required={hasDefects}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* ===== DEFECTS SECTION (always visible) ===== */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            Are There Any Defects Selected
+          </CardTitle>
+          <CardDescription>
+            If &quot;Def&quot; is selected, please specify defects here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={defectDetails}
+            onChange={(e) => setDefectDetails(e.target.value)}
+            placeholder="Details of defect ..."
+            rows={4}
+            className="resize-none"
+          />
+        </CardContent>
+      </Card>
 
       {/* ===== SIGNATURE PAD ===== */}
       <Card>

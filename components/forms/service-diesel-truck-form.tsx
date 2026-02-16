@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useRef, useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -9,49 +9,38 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
 // ============================================================================
-// INSPECTION ITEMS – exactly as they appear in the Excavator Loader PDF
+// INSPECTION ITEMS – exactly as they appear in the Service/Diesel Truck PDF
 // ============================================================================
 const ALL_INSPECTION_ITEMS: string[] = [
   "License and Phepha",
-  "Protective Structure",
+  "Body of Cab / Tank",
   "Exhaust",
   "Steps and Rails",
   "Cab",
+  "Mirrors",
   "Windscreen, Windows & Wipers",
   "Air Conditioner",
   "Seats",
   "Safety Belt",
+  "Steering",
   "Hooter and Reverse Alarm",
   "Gauges",
-  "Hydraulic Controls",
-  "Hydraulic Head Cut Off (Bail Lever)",
-  "Working Lights (LED)",
-  "Rotating Light",
-  "Grill (Sieve)",
+  "Clutch",
+  "Lamps",
+  "Foot Brake",
+  "Hand Brake/Brake Cable",
   "Battery",
   "Radiator",
-  "Air Pre-Cleaner",
-  "Fan Belt",
-  "Fuel & Oil levels",
-  "Fuel & Oil Leaks",
-  "Wiring",
-  "Grease",
-  "Boom Structure",
-  "Hydraulic Cylinders",
-  "Hydraulic Hoses and Fittings",
-  "Grab",
-  "Tracks & Sprockets",
-  "All Excess Loose Debris Removed Pre-Shift",
-  "Escape Hatch & Hammer",
-  "Communication",
-  "Fire Systems"
+  "Air Tank Drain",
+  "Oil/Fluid/Air Levels",
+  "Fuel, Air and Oil leaks",
+  "Differentials"
 ]
 
 // ============================================================================
@@ -59,38 +48,28 @@ const ALL_INSPECTION_ITEMS: string[] = [
 // ============================================================================
 const itemIconMap: Record<string, string> = {
   "License and Phepha": "license2.png",
-  "Protective Structure": "protective-structure.png",
+  "Body of Cab / Tank": "cabs.png",
   "Exhaust": "exhaust.png",
   "Steps and Rails": "steps-and-rails.png",
   "Cab": "cabs.png",
+  "Mirrors": "mirrors2.png",
   "Windscreen, Windows & Wipers": "wipes.png",
   "Air Conditioner": "air-conditioner.png",
   "Seats": "seats.png",
   "Safety Belt": "safety-belt.png",
+  "Steering": "steering-column.png",
   "Hooter and Reverse Alarm": "hooters.png",
   "Gauges": "gauges.png",
-  "Hydraulic Controls": "hydraulic-controls.png",
-  "Hydraulic Head Cut Off (Bail Lever)": "bail-lever.png",
-  "Working Lights (LED)": "led.png",
-  "Rotating Light": "rotating-light.png",
-  "Grill (Sieve)": "grill.png",
+  "Clutch": "clutch.png",
+  "Lamps": "led.png",
+  "Foot Brake": "foot-brake.png",
+  "Hand Brake/Brake Cable": "hand-brake.png",
   "Battery": "battery.png",
   "Radiator": "radiator.png",
-  "Air Pre-Cleaner": "air-pre-cleaner.png",
-  "Fan Belt": "fan-belt.png",
-  "Fuel & Oil levels": "fuel-oil-levels.png",
-  "Fuel & Oil Leaks": "fuel-leaks.png",
-  "Wiring": "wiring.png",
-  "Grease": "grease.png",
-  "Boom Structure": "boom-structure.png",
-  "Hydraulic Cylinders": "hydraulic-cylinders.png",
-  "Hydraulic Hoses and Fittings": "hydraulic-hoses.png",
-  "Grab": "boom-structure.png", // fallback; replace if you have a grab-specific image
-  "Tracks & Sprockets": "tracks-sprockets.png",
-  "All Excess Loose Debris Removed Pre-Shift": "all-excess-loose-debris.png",
-  "Escape Hatch & Hammer": "escape-hatch.png",
-  "Communication": "communication.png",
-  "Fire Systems": "fire-system.png"
+  "Air Tank Drain": "air-fuel-leaks.png",
+  "Oil/Fluid/Air Levels": "oil-fluid-air-level.png",
+  "Fuel, Air and Oil leaks": "fuel-leaks.png",
+  "Differentials": "differentials.png"
 }
 
 // ============================================================================
@@ -153,19 +132,22 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function ExcavatorLoaderForm() {
+export function ServiceDieselTruckForm() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ---------- Operator Information (labels exactly as in PDF) ----------
+  // ---------- Driver Information (labels exactly as in PDF) ----------
   const [formData, setFormData] = useState({
-    operatorName: "",
-    shift: "",
+    driverName: "",
+    truckRegistration: "",
     date: new Date().toISOString().split("T")[0],
-    hourMeterStart: "",
-    hourMeterStop: "",
+    odometerStartHours: "",
+    odometerStopHours: "",
+    odometerStartKm: "",
+    odometerStopKm: "",
     validTrainingCard: "",
-    unitNumber: "",
+    validPDP: "",
+    dangerousGoodsCard: "",
   })
 
   // ---------- Auto‑generate Document Number ----------
@@ -175,7 +157,7 @@ export function ExcavatorLoaderForm() {
     const month = (date.getMonth() + 1).toString().padStart(2, "0")
     const day = date.getDate().toString().padStart(2, "0")
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0")
-    return `EL-${year}${month}${day}-${random}`
+    return `SD-${year}${month}${day}-${random}`
   }, [])
 
   // ---------- Inspection Items State ----------
@@ -298,7 +280,7 @@ export function ExcavatorLoaderForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.operatorName || !formData.unitNumber) {
+    if (!formData.driverName || !formData.truckRegistration) {
       toast.error("Please fill in all required fields")
       return
     }
@@ -320,9 +302,9 @@ export function ExcavatorLoaderForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          formType: "excavator-loader",
-          formTitle: "Excavator Loader Pre-Shift Inspection Checklist",
-          submittedBy: formData.operatorName,
+          formType: "service-diesel-truck",
+          formTitle: "Service/Diesel Truck Pre-Shift Inspection Checklist",
+          submittedBy: formData.driverName,
           hasDefects,
           data: {
             ...formData,
@@ -374,15 +356,15 @@ export function ExcavatorLoaderForm() {
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">
-            Excavator Loader Pre-Shift Inspection Checklist
+            Service/Diesel Truck Pre-Shift Inspection Checklist
           </CardTitle>
           <CardDescription>
-            Document Ref: HSEMS/8.1.19/REG/002 | Rev. 4 | 27.03.2020
+            Document Ref: HSEMS/8.1.19/REG/??? | Rev. ? | 27.03.2020
           </CardDescription>
         </CardHeader>
       </Card>
 
-      {/* ===== GENERAL INSTRUCTIONS (under the logo, with your requested text) ===== */}
+      {/* ===== GENERAL INSTRUCTIONS (under the logo) ===== */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
@@ -404,19 +386,19 @@ export function ExcavatorLoaderForm() {
         </CardContent>
       </Card>
 
-      {/* ===== OPERATOR INFORMATION ===== */}
+      {/* ===== DRIVER INFORMATION ===== */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base text-foreground">Operator Information</CardTitle>
+          <CardTitle className="text-base text-foreground">Driver Information</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="operatorName">Operators name and surname <span className="text-destructive">*</span></Label>
+            <Label htmlFor="driverName">Drivers name <span className="text-destructive">*</span></Label>
             <Input
-              id="operatorName"
-              value={formData.operatorName}
-              onChange={(e) => setFormData((p) => ({ ...p, operatorName: e.target.value }))}
-              placeholder="Enter operator name"
+              id="driverName"
+              value={formData.driverName}
+              onChange={(e) => setFormData((p) => ({ ...p, driverName: e.target.value }))}
+              placeholder="Enter driver name"
               required
             />
           </div>
@@ -427,19 +409,14 @@ export function ExcavatorLoaderForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shift">Shift</Label>
-            <Select
-              value={formData.shift}
-              onValueChange={(val) => setFormData((p) => ({ ...p, shift: val }))}
-            >
-              <SelectTrigger id="shift">
-                <SelectValue placeholder="Select shift" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Day Shift</SelectItem>
-                <SelectItem value="night">Night Shift</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="truckRegistration">Truck registration <span className="text-destructive">*</span></Label>
+            <Input
+              id="truckRegistration"
+              value={formData.truckRegistration}
+              onChange={(e) => setFormData((p) => ({ ...p, truckRegistration: e.target.value }))}
+              placeholder="e.g. ABC 123 GP"
+              required
+            />
           </div>
 
           <div className="space-y-2">
@@ -453,24 +430,46 @@ export function ExcavatorLoaderForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hourMeterStart">Hour meter start</Label>
+            <Label htmlFor="odometerStartHours">Odometer start – hours</Label>
             <Input
-              id="hourMeterStart"
+              id="odometerStartHours"
               type="number"
-              value={formData.hourMeterStart}
-              onChange={(e) => setFormData((p) => ({ ...p, hourMeterStart: e.target.value }))}
+              value={formData.odometerStartHours}
+              onChange={(e) => setFormData((p) => ({ ...p, odometerStartHours: e.target.value }))}
               placeholder="e.g. 1250"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hourMeterStop">Hour meter stop</Label>
+            <Label htmlFor="odometerStopHours">Odometer stop – hours</Label>
             <Input
-              id="hourMeterStop"
+              id="odometerStopHours"
               type="number"
-              value={formData.hourMeterStop}
-              onChange={(e) => setFormData((p) => ({ ...p, hourMeterStop: e.target.value }))}
+              value={formData.odometerStopHours}
+              onChange={(e) => setFormData((p) => ({ ...p, odometerStopHours: e.target.value }))}
               placeholder="e.g. 1262"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="odometerStartKm">Odometer start – kilometres</Label>
+            <Input
+              id="odometerStartKm"
+              type="number"
+              value={formData.odometerStartKm}
+              onChange={(e) => setFormData((p) => ({ ...p, odometerStartKm: e.target.value }))}
+              placeholder="e.g. 45200"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="odometerStopKm">Odometer stop – kilometres</Label>
+            <Input
+              id="odometerStopKm"
+              type="number"
+              value={formData.odometerStopKm}
+              onChange={(e) => setFormData((p) => ({ ...p, odometerStopKm: e.target.value }))}
+              placeholder="e.g. 45350"
             />
           </div>
 
@@ -485,13 +484,23 @@ export function ExcavatorLoaderForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="unitNumber">Unit number <span className="text-destructive">*</span></Label>
+            <Label htmlFor="validPDP">Valid PDP license (exp date)</Label>
             <Input
-              id="unitNumber"
-              value={formData.unitNumber}
-              onChange={(e) => setFormData((p) => ({ ...p, unitNumber: e.target.value }))}
-              placeholder="e.g. EXC-L-001"
-              required
+              id="validPDP"
+              type="date"
+              value={formData.validPDP}
+              onChange={(e) => setFormData((p) => ({ ...p, validPDP: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dangerousGoodsCard">Dangerous goods training card</Label>
+            <Input
+              id="dangerousGoodsCard"
+              type="text"
+              value={formData.dangerousGoodsCard}
+              onChange={(e) => setFormData((p) => ({ ...p, dangerousGoodsCard: e.target.value }))}
+              placeholder="e.g. DG-12345"
             />
           </div>
         </CardContent>
@@ -561,7 +570,7 @@ export function ExcavatorLoaderForm() {
             Are There Any Defects Selected
           </CardTitle>
           <CardDescription>
-            If “Def” is selected, please specify defects here.
+            If "Def" is selected, please specify defects here.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -620,7 +629,7 @@ export function ExcavatorLoaderForm() {
         <div>
           <span className="font-semibold">Document Reference No.</span>
           <br />
-          HSEMS / 8.1.19 / REG / 002
+          HSEMS / 8.1.19 / REG / ???
         </div>
         <div>
           <span className="font-semibold">Author</span>
@@ -630,7 +639,7 @@ export function ExcavatorLoaderForm() {
         <div>
           <span className="font-semibold">Revision</span>
           <br />
-          4
+          ?
         </div>
         <div>
           <span className="font-semibold">Creation Date</span>

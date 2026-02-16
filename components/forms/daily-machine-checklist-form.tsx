@@ -1,0 +1,385 @@
+"use client"
+
+import React, { useRef, useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { type CheckStatus } from "@/lib/types"
+import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+
+// ============================================================================
+// INSPECTION ITEMS – flat list from the PDF (84 items)
+// ============================================================================
+const ALL_INSPECTION_ITEMS: string[] = [
+  // A. Engine
+  "A1. Conditions/cleanliness",
+  "A2. Leaks (water, oil, or fuel)",
+  "A3. Fluid levels",
+  "A4. Starter function",
+  "A5. Engine guards",
+  "A6. Belts",
+  "A7. Radiator hoses and cap",
+
+  // B. Chassis / Frame / Cab
+  "B1. Condition and cleanliness",
+  "B2. Seats",
+  "B3. Doors and locks",
+  "B4. Windscreen / Windows",
+  "B5. Mirrors",
+  "B6. Chassis cracks",
+  "B7. FOPS / ROPS",
+  "B8. Headboards / Uprights",
+  "B9. Jockey wheel / Load stand (trailer)",
+  "B10. Tow bar and eye and tow hook",
+
+  // C. Transmission (Drive Train)
+  "C1. Clutch operations and hydraulics",
+  "C2. Propshaft, U and CV joints",
+  "C3. Diff and final drives (guards)",
+  "C4. Oil leaks",
+  "C5. Oscillation",
+  "C6. Bogey greasing",
+
+  // D. Electrics
+  "D1. Lights",
+  "D2. Hooter",
+  "D3. Wiper",
+  "D4. Battery - secure",
+  "D5. Rotating light",
+  "D6. Two way radio",
+
+  // E. Brakes
+  "E1. Hydraulic leaks / levels",
+  "E2. Brake lines / hoses / levers",
+  "E3. Exhaust brake",
+  "E4. Service brake",
+  "E5. Handbrake",
+  "E6. Retarder emergency stop",
+  "E7. Air pressure gauges",
+
+  // F. Wheels
+  "F1. Tyres, rims and spares",
+  "F2. Tyre air pressure",
+  "F3. Studs and nuts",
+  "F4. Tracks / rollers / sprockets",
+  "F5. Wheel bearings",
+  "F6. Steering - free play",
+
+  // G. Exhaust
+  "G1. Leaks",
+  "G2. Brackets",
+  "G3. Soot",
+
+  // H. Hydraulics
+  "H1. No cracks on pipes and fittings",
+  "H2. Hydraulic pipes and fittings secure",
+  "H3. Hydraulic brackets",
+  "H4. Oil leaks",
+  "H5. Cylinders",
+  "H6. Pins / bushes",
+
+  // I. Safety & Emergency
+  "I1. Safety belt",
+  "I2. Reverse alarm",
+  "I3. Fire extinguisher / suppression",
+  "I4. Chocks x 2",
+  "I5. Emergency triangles x 2",
+
+  // J. Attachments (Grab)
+  "J1. Hangar link / spacers",
+  "J2. Greasing adequate",
+  "J3. Rotator",
+  "J4. Oil leaks",
+  "J5. Cracks / wear",
+  "J6. Pins / bushes",
+  "J7. Grab tines",
+
+  // K. Attachments (Head)
+  "K1. Hangar link / spacers (Figure 8)",
+  "K2. All grease nipples functional / greasing adequate",
+  "K3. Rotator",
+  "K4. Oil leaks",
+  "K5. Cracks / wear",
+  "K6. Pins / bushes",
+  "K7. Knives and rollers sharp",
+  "K8. Rollers / motors / bypass",
+  "K9. Saw motor / chain guard and cutter bar pump",
+  "K10. Covers secure",
+
+  // L. Attachments (Winch)
+  "L1. Mountings",
+  "L2. Greasing adequate",
+  "L3. Oil leaks",
+  "L4. Condition",
+  "L5. Cables and chains",
+  "L6. Roller guides",
+
+  // M. Crane / Boom
+  "M1. Greasing adequate",
+  "M2. Cracks",
+  "M3. Pins / bushes",
+  "M4. Nose cone",
+  "M5. Main pin",
+]
+
+interface SimpleItemRowProps {
+  item: string
+  value: CheckStatus
+  onChange: (value: CheckStatus) => void
+}
+
+function SimpleItemRow({ item, value, onChange }: SimpleItemRowProps) {
+  const isSelected = (status: CheckStatus) => value === status
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center border-b border-gray-200 last:border-0">
+      <div className="py-3 pr-4">
+        <span className="text-sm font-medium text-foreground">{item}</span>
+      </div>
+      <div className="py-3 pl-4 flex items-center gap-2">
+        <Button
+          type="button"
+          variant={isSelected("ok") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("ok") ? null : "ok")}
+          className={`w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}
+        >
+          OK
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("def") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("def") ? null : "def")}
+          className={`w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}
+        >
+          DEF
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("na") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("na") ? null : "na")}
+          className={`w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}
+        >
+          N/A
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export function DailyMachineChecklistForm() {
+  const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [formData, setFormData] = useState({
+    vehicleEquipment: "",
+    registrationNumber: "",
+    week: "",
+    date: new Date().toISOString().split("T")[0],
+    kmsHrs: "",
+  })
+
+  const documentNo = useMemo(() => {
+    const d = new Date()
+    return `DM-${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}-${Math.floor(Math.random()*1000).toString().padStart(3,"0")}`
+  }, [])
+
+  const [items, setItems] = useState<Record<string, CheckStatus>>(
+    Object.fromEntries(ALL_INSPECTION_ITEMS.map(item => [item, null]))
+  )
+  const [defectDetails, setDefectDetails] = useState("")
+
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [signatureImage, setSignatureImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    const width = 400, height = 120
+    canvas.width = width; canvas.height = height
+    ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#000000"
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, width, height)
+    ctx.strokeStyle = "#cccccc"; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
+  }, [])
+
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    if ("touches" in e) {
+      const touch = e.touches[0]
+      return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY }
+    } else {
+      return { x: e.nativeEvent.offsetX * scaleX, y: e.nativeEvent.offsetY * scaleY }
+    }
+  }
+
+  const startDrawing = (e: any) => { e.preventDefault(); setIsDrawing(true); const ctx = canvasRef.current?.getContext("2d"); if (!ctx) return; ctx.beginPath(); const { x, y } = getCanvasCoordinates(e); ctx.moveTo(x, y) }
+  const draw = (e: any) => { e.preventDefault(); if (!isDrawing) return; const ctx = canvasRef.current?.getContext("2d"); if (!ctx) return; const { x, y } = getCanvasCoordinates(e); ctx.lineTo(x, y); ctx.stroke() }
+  const stopDrawing = () => { setIsDrawing(false); if (canvasRef.current) setSignatureImage(canvasRef.current.toDataURL("image/png")) }
+  const clearSignature = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.strokeStyle = "#cccccc"; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1)
+    setSignatureImage(null)
+  }
+
+  const hasDefects = useMemo(() => Object.values(items).some(s => s === "def"), [items])
+  const allItemsChecked = useMemo(() => Object.values(items).every(s => s !== null), [items])
+  const checkedCount = useMemo(() => Object.values(items).filter(s => s !== null).length, [items])
+  const handleItemChange = (label: string, value: CheckStatus) => setItems(prev => ({ ...prev, [label]: value }))
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.vehicleEquipment) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+    if (!allItemsChecked) {
+      toast.error("Please check all inspection items")
+      return
+    }
+    if (!signatureImage) {
+      toast.error("Please provide your signature")
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/submissions", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formType: "daily-machine-checklist",
+          formTitle: "Daily Machine Checklist",
+          submittedBy: formData.vehicleEquipment,
+          hasDefects,
+          data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
+        })
+      })
+      if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
+      else toast.error("Failed to submit checklist")
+    } catch { toast.error("An error occurred. Please try again.") } finally { setIsSubmitting(false) }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 p-4 pb-12 lg:p-8 lg:pb-16">
+      <div className="flex items-center gap-3">
+        <Button type="button" variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground">
+          <Link href="/"><ArrowLeft className="h-4 w-4" /> Back</Link>
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-3"><Image src="/images/ringomode-logo.png" alt="Ringomode DSP logo" width={160} height={50} className="object-contain" /></div>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
+          <CardTitle className="text-xl text-foreground">Daily Machine Checklist</CardTitle>
+          <CardDescription>Document Ref: HSEMS/8.1.19/DOC/011 | Rev. 1 | 01.05.2023</CardDescription>
+        </CardHeader>
+      </Card>
+
+      <Card className="border-amber-200 bg-amber-50">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /><CardTitle className="text-sm font-semibold text-amber-800">General Instructions for Checklist:</CardTitle></div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-amber-700">The operator is to conduct a daily inspection of the machine and assess its condition.</p>
+          <p className="mt-2 text-sm text-amber-700">Outcome to be detailed with an "Ok" if in order and a "Def" if defective. Defective outcomes to be documented below.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base text-foreground">Machine Information</CardTitle></CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2"><Label htmlFor="vehicleEquipment">Vehicle / Equipment <span className="text-destructive">*</span></Label><Input id="vehicleEquipment" value={formData.vehicleEquipment} onChange={e => setFormData(p=>({...p, vehicleEquipment:e.target.value}))} placeholder="e.g. Excavator, Truck" required /></div>
+          <div className="space-y-2"><Label htmlFor="documentNo">Document No.</Label><Input id="documentNo" value={documentNo} readOnly className="bg-muted" /></div>
+          <div className="space-y-2"><Label htmlFor="registrationNumber">Registration / Machine number</Label><Input id="registrationNumber" value={formData.registrationNumber} onChange={e => setFormData(p=>({...p, registrationNumber:e.target.value}))} placeholder="e.g. ABC123" /></div>
+          <div className="space-y-2"><Label htmlFor="week">Week</Label><Input id="week" value={formData.week} onChange={e => setFormData(p=>({...p, week:e.target.value}))} placeholder="e.g. 12" /></div>
+          <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={formData.date} onChange={e => setFormData(p=>({...p, date:e.target.value}))} /></div>
+          <div className="space-y-2"><Label htmlFor="kmsHrs">Kms / Hrs</Label><Input id="kmsHrs" value={formData.kmsHrs} onChange={e => setFormData(p=>({...p, kmsHrs:e.target.value}))} placeholder="e.g. 1250" /></div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="pt-6">
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Quick Reference:</h3>
+          <div className="grid grid-cols-3 gap-2 text-center text-sm">
+            <div className="rounded-md bg-green-100 p-2 text-green-700">OK - In order</div>
+            <div className="rounded-md bg-red-100 p-2 text-red-700">DEF - Defective</div>
+            <div className="rounded-md bg-gray-100 p-2 text-gray-700">N/A - Not applicable</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">Progress: {checkedCount} / {ALL_INSPECTION_ITEMS.length} items checked</span>
+        {allItemsChecked && <span className="flex items-center gap-1 text-green-600"><CheckCircle2 className="h-4 w-4" /> All items checked</span>}
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(checkedCount / ALL_INSPECTION_ITEMS.length) * 100}%` }} /></div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base text-foreground">Inspection Items</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {ALL_INSPECTION_ITEMS.map(item => (
+            <SimpleItemRow
+              key={item}
+              item={item}
+              value={items[item]}
+              onChange={val => handleItemChange(item, val)}
+            />
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-5 w-5 text-amber-600" /> Are There Any Defects Selected</CardTitle>
+          <CardDescription>If "Def" is selected, please specify defects here.</CardDescription>
+        </CardHeader>
+        <CardContent><Textarea value={defectDetails} onChange={e => setDefectDetails(e.target.value)} placeholder="Details of defect ..." rows={4} className="resize-none" /></CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base text-foreground">Signature</CardTitle><CardDescription>Draw your signature using your mouse or touchpad</CardDescription></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col items-center">
+            <canvas ref={canvasRef} className="w-full max-w-[400px] h-[120px] border rounded-md touch-none cursor-crosshair"
+              onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
+              onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} onTouchCancel={stopDrawing} />
+            <div className="flex gap-2 mt-3 self-start"><Button type="button" variant="outline" size="sm" onClick={clearSignature} className="gap-2"><Eraser className="h-4 w-4" /> Clear</Button></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground border-t pt-4">
+        <div><span className="font-semibold">Document Reference No.</span><br />HSEMS / 8.1.19 / DOC / 011</div>
+        <div><span className="font-semibold">Author</span><br />HSE Manager</div>
+        <div><span className="font-semibold">Revision</span><br />1</div>
+        <div><span className="font-semibold">Creation Date</span><br />01.05.2023</div>
+      </div>
+
+      <div className="flex items-center justify-end gap-4">
+        <Button type="button" variant="outline" asChild><Link href="/">Cancel</Link></Button>
+        <Button type="submit" disabled={isSubmitting} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"><Send className="h-4 w-4" />{isSubmitting ? "Submitting..." : "Submit Checklist"}</Button>
+      </div>
+    </form>
+  )
+}

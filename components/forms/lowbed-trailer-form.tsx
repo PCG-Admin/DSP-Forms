@@ -9,17 +9,154 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { ChecklistRadioGroup } from "@/components/checklist-radio-group"
-import { lowbedTrailerItems, type CheckStatus } from "@/lib/types"
+import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+
+// ============================================================================
+// INSPECTION ITEMS – exactly as they appear in the PDF (headings only)
+// ============================================================================
+const ALL_INSPECTION_ITEMS: string[] = [
+  "License and Phepha",
+  "Body of Cab/Trailer",
+  "Exhaust",
+  "Steps and Rails",
+  "Cab",
+  "Mirrors",
+  "Windscreen, Windows & Wipers",
+  "Air Conditioner",
+  "Seats",
+  "Safety Belt",
+  "Steering Column",
+  "Hooter and Reverse Alarm",
+  "Gauges",
+  "Clutch",
+  "Lamps",
+  "Brakes",
+  "Handbrake and Trailer Brakes (If Fitted)",
+  "Battery",
+  "Radiator",
+  "Wiring",
+  "Air Tank Drain",
+  "Oil/Fluid/Air Levels",
+  "Fuel, Air and Oil leaks",
+  "Differentials",
+  "Tyres",
+  "Mud Flaps",
+  "Hoses & Fittings (Air & Hydraulics)",
+  "Hydraulic Controls",
+  "Trailer Deck",
+  "Tow Bar & Hitch/King Pin",
+  "Landing Gear",
+  "Anchor Points, Chains & Binders",
+  "Chevron, Reflectors and Tape"
+]
+
+// ============================================================================
+// PER‑ITEM ICON MAPPING – using the image filenames you provided
+// ============================================================================
+const itemIconMap: Record<string, string> = {
+  "License and Phepha": "license2.png",
+  "Body of Cab/Trailer": "cabs.png",
+  "Exhaust": "exhaust.png",
+  "Steps and Rails": "steps-and-rails.png",
+  "Cab": "cabs.png",
+  "Mirrors": "mirrors2.png",
+  "Windscreen, Windows & Wipers": "wipes.png",
+  "Air Conditioner": "air-conditioner.png",
+  "Seats": "seats.png",
+  "Safety Belt": "safety-belt.png",
+  "Steering Column": "steering-column.png",
+  "Hooter and Reverse Alarm": "hooters.png",
+  "Gauges": "gauges.png",
+  "Clutch": "clutch.png",
+  "Lamps": "led.png",
+  "Brakes": "foot-brake.png",
+  "Handbrake and Trailer Brakes (If Fitted)": "hand-brake.png",
+  "Battery": "battery.png",
+  "Radiator": "radiator.png",
+  "Wiring": "wiring.png",
+  "Air Tank Drain": "air-fuel-leaks.png",
+  "Oil/Fluid/Air Levels": "oil-fluid-air-level.png",
+  "Fuel, Air and Oil leaks": "fuel-leaks.png",
+  "Differentials": "differentials.png",
+  "Tyres": "types-spares.png",
+  "Mud Flaps": "mud-flap.png",
+  "Hoses & Fittings (Air & Hydraulics)": "hydraulic-hoses.png",
+  "Hydraulic Controls": "hydraulic-controls.png",
+  "Trailer Deck": "boom-structure.png",
+  "Tow Bar & Hitch/King Pin": "tow-hitch.png",
+  "Landing Gear": "landing-gear.png",
+  "Anchor Points, Chains & Binders": "anchor-points.png",
+  "Chevron, Reflectors and Tape": "led.png"
+}
+
+// ============================================================================
+// PER‑ITEM ROW COMPONENT – unchanged
+// ============================================================================
+interface ItemRowProps {
+  item: string
+  value: CheckStatus
+  onChange: (value: CheckStatus) => void
+  iconSrc: string
+}
+
+function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
+  const isSelected = (status: CheckStatus) => value === status
+
+  return (
+    <div className="grid grid-cols-[1fr_auto_auto] items-center border-b border-gray-200 last:border-0">
+      <div className="py-3 pr-4 border-r border-gray-200">
+        <span className="text-sm font-medium text-foreground">{item}</span>
+      </div>
+      <div className="py-3 px-4 border-r border-gray-200 bg-gray-50 flex justify-center w-[150px]">
+        <Image
+          src={iconSrc}
+          alt={item}
+          width={150}
+          height={150}
+          className="object-contain"
+        />
+      </div>
+      <div className="py-3 pl-4 flex items-center gap-2">
+        <Button
+          type="button"
+          variant={isSelected("ok") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("ok") ? null : "ok")}
+          className={`w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}
+        >
+          OK
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("def") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("def") ? null : "def")}
+          className={`w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}
+        >
+          DEF
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("na") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("na") ? null : "na")}
+          className={`w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}
+        >
+          N/A
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function LowbedTrailerForm() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ---------- Driver Information ----------
+  // ---------- Driver Information (labels exactly as in PDF) ----------
   const [formData, setFormData] = useState({
     driverName: "",
     truckRegistration: "",
@@ -41,9 +178,9 @@ export function LowbedTrailerForm() {
     return `LT-${year}${month}${day}-${random}`
   }, [])
 
-  // ---------- Inspection Items ----------
+  // ---------- Inspection Items State ----------
   const [items, setItems] = useState<Record<string, CheckStatus>>(
-    Object.fromEntries(lowbedTrailerItems.map((item) => [item, null]))
+    Object.fromEntries(ALL_INSPECTION_ITEMS.map((item) => [item, null]))
   )
 
   // ---------- Defect Details ----------
@@ -77,6 +214,28 @@ export function LowbedTrailerForm() {
     ctx.lineWidth = 1
     ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
   }, [])
+
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+
+    if ("touches" in e) {
+      const touch = e.touches[0]
+      return {
+        x: (touch.clientX - rect.left) * scaleX,
+        y: (touch.clientY - rect.top) * scaleY,
+      }
+    } else {
+      return {
+        x: e.nativeEvent.offsetX * scaleX,
+        y: e.nativeEvent.offsetY * scaleY,
+      }
+    }
+  }
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault()
@@ -127,39 +286,15 @@ export function LowbedTrailerForm() {
     setSignatureImage(null)
   }
 
-  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current
-    if (!canvas) return { x: 0, y: 0 }
-
-    const rect = canvas.getBoundingClientRect()
-    const scaleX = canvas.width / rect.width
-    const scaleY = canvas.height / rect.height
-
-    if ("touches" in e) {
-      const touch = e.touches[0]
-      return {
-        x: (touch.clientX - rect.left) * scaleX,
-        y: (touch.clientY - rect.top) * scaleY,
-      }
-    } else {
-      return {
-        x: e.nativeEvent.offsetX * scaleX,
-        y: e.nativeEvent.offsetY * scaleY,
-      }
-    }
-  }
-
   // ---------- Computed Values ----------
   const hasDefects = useMemo(() => Object.values(items).some((s) => s === "def"), [items])
   const allItemsChecked = useMemo(() => Object.values(items).every((s) => s !== null), [items])
   const checkedCount = useMemo(() => Object.values(items).filter((s) => s !== null).length, [items])
 
-  // ---------- Item Change Handler ----------
   const handleItemChange = (label: string, value: CheckStatus) => {
     setItems((prev) => ({ ...prev, [label]: value }))
   }
 
-  // ---------- Submit Handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -191,7 +326,7 @@ export function LowbedTrailerForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           formType: "lowbed-trailer",
-          formTitle: "Lowbed & Roll Back Trailer Pre-Shift Use Inspection Checklist",
+          formTitle: "Lowbed And Roll Back Trailer Pre-Shift Use Inspection Checklist",
           submittedBy: formData.driverName,
           hasDefects,
           data: {
@@ -252,7 +387,7 @@ export function LowbedTrailerForm() {
         </CardHeader>
       </Card>
 
-      {/* ===== GENERAL INSTRUCTIONS ===== */}
+      {/* ===== GENERAL INSTRUCTIONS (updated) ===== */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
@@ -264,8 +399,8 @@ export function LowbedTrailerForm() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-amber-700">
-            The driver is to conduct a 10 minute physical walkabout of the truck and trailer on a daily basis
-            and assess the condition of the equipment.
+            The mechanic is to conduct a 10 minute physical walkabout of the vehicle on a daily basis
+            and assess the condition of the vehicle.
           </p>
           <p className="mt-2 text-sm text-amber-700">
             Outcome to be detailed with an "Ok" if in order and a "Def" if defective. Defective outcomes
@@ -281,9 +416,7 @@ export function LowbedTrailerForm() {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="driverName" className="text-foreground">
-              Driver's Name <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="driverName">Drivers name <span className="text-destructive">*</span></Label>
             <Input
               id="driverName"
               value={formData.driverName}
@@ -293,21 +426,13 @@ export function LowbedTrailerForm() {
             />
           </div>
 
-          {/* Auto-generated Document Number */}
           <div className="space-y-2">
-            <Label htmlFor="documentNo" className="text-foreground">Document No.</Label>
-            <Input
-              id="documentNo"
-              value={documentNo}
-              readOnly
-              className="bg-muted"
-            />
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="truckRegistration" className="text-foreground">
-              Truck Registration <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="truckRegistration">Truck registration <span className="text-destructive">*</span></Label>
             <Input
               id="truckRegistration"
               value={formData.truckRegistration}
@@ -318,7 +443,7 @@ export function LowbedTrailerForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date" className="text-foreground">Date</Label>
+            <Label htmlFor="date">Date</Label>
             <Input
               id="date"
               type="date"
@@ -328,7 +453,7 @@ export function LowbedTrailerForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="openingKilometres" className="text-foreground">Opening Kilometres</Label>
+            <Label htmlFor="openingKilometres">Opening kilometres</Label>
             <Input
               id="openingKilometres"
               type="number"
@@ -339,7 +464,7 @@ export function LowbedTrailerForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="closingKilometres" className="text-foreground">Closing Kilometres</Label>
+            <Label htmlFor="closingKilometres">Closing kilometres</Label>
             <Input
               id="closingKilometres"
               type="number"
@@ -350,7 +475,7 @@ export function LowbedTrailerForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="validDriversLicense" className="text-foreground">Valid Driver's License (Exp. Date)</Label>
+            <Label htmlFor="validDriversLicense">Valid drivers license (exp date)</Label>
             <Input
               id="validDriversLicense"
               type="date"
@@ -360,7 +485,7 @@ export function LowbedTrailerForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="trailerRegistration" className="text-foreground">Trailer Registration</Label>
+            <Label htmlFor="trailerRegistration">Trailer registration</Label>
             <Input
               id="trailerRegistration"
               value={formData.trailerRegistration}
@@ -370,7 +495,7 @@ export function LowbedTrailerForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pdpExpiryDate" className="text-foreground">PDP Expiry Date</Label>
+            <Label htmlFor="pdpExpiryDate">PDP expiry date</Label>
             <Input
               id="pdpExpiryDate"
               type="date"
@@ -396,10 +521,10 @@ export function LowbedTrailerForm() {
       {/* ===== PROGRESS ===== */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
-          Progress: {checkedCount} / {lowbedTrailerItems.length} items checked
+          Progress: {checkedCount} / {ALL_INSPECTION_ITEMS.length} items checked
         </span>
         {allItemsChecked && (
-          <span className="flex items-center gap-1 text-[hsl(142,76%,36%)]">
+          <span className="flex items-center gap-1 text-green-600">
             <CheckCircle2 className="h-4 w-4" />
             All items checked
           </span>
@@ -408,25 +533,32 @@ export function LowbedTrailerForm() {
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-primary transition-all"
-          style={{ width: `${(checkedCount / lowbedTrailerItems.length) * 100}%` }}
+          style={{ width: `${(checkedCount / ALL_INSPECTION_ITEMS.length) * 100}%` }}
         />
       </div>
 
-      {/* ===== INSPECTION ITEMS (flat list) ===== */}
+      {/* ===== INSPECTION ITEMS – flat list ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base text-foreground">Inspection Items</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {lowbedTrailerItems.map((item, idx) => (
-            <ChecklistRadioGroup
-              key={item}
-              label={item}
-              value={items[item]}
-              onChange={(val) => handleItemChange(item, val)}
-              index={idx}
-            />
-          ))}
+          {ALL_INSPECTION_ITEMS.map((item) => {
+            const iconFile = itemIconMap[item]
+            if (!iconFile) {
+              console.warn(`No icon mapped for item: ${item}`)
+              return null
+            }
+            return (
+              <ItemRow
+                key={item}
+                item={item}
+                value={items[item]}
+                onChange={(val) => handleItemChange(item, val)}
+                iconSrc={`/images/${iconFile}`}
+              />
+            )
+          })}
         </CardContent>
       </Card>
 
@@ -494,6 +626,30 @@ export function LowbedTrailerForm() {
       </Card>
 
       <Separator />
+
+      {/* ===== FOOTER ===== */}
+      <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground border-t pt-4">
+        <div>
+          <span className="font-semibold">Document Reference No.</span>
+          <br />
+          HSEMS / 8.1.19 / REG / 020
+        </div>
+        <div>
+          <span className="font-semibold">Author</span>
+          <br />
+          HSE Manager
+        </div>
+        <div>
+          <span className="font-semibold">Revision</span>
+          <br />
+          2
+        </div>
+        <div>
+          <span className="font-semibold">Date</span>
+          <br />
+          27.03.2024
+        </div>
+      </div>
 
       {/* ===== SUBMIT BUTTONS ===== */}
       <div className="flex items-center justify-end gap-4">

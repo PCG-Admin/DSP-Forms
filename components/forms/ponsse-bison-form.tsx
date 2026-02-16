@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useRef, useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -16,7 +16,7 @@ import Link from "next/link"
 import Image from "next/image"
 
 // ============================================================================
-// INSPECTION ITEMS – exactly as they appear in the Excavator Loader PDF
+// INSPECTION ITEMS – exactly as they appear in the Ponsse Bison PDF
 // ============================================================================
 const ALL_INSPECTION_ITEMS: string[] = [
   "License and Phepha",
@@ -31,27 +31,28 @@ const ALL_INSPECTION_ITEMS: string[] = [
   "Hooter and Reverse Alarm",
   "Gauges",
   "Hydraulic Controls",
-  "Hydraulic Head Cut Off (Bail Lever)",
+  "Safety/Emergency Cut Out System (Emergency Button)",
   "Working Lights (LED)",
   "Rotating Light",
-  "Grill (Sieve)",
+  "Park Brake",
   "Battery",
   "Radiator",
-  "Air Pre-Cleaner",
   "Fan Belt",
-  "Fuel & Oil levels",
-  "Fuel & Oil Leaks",
   "Wiring",
+  "Oil/Fluid/Air Levels",
+  "Fuel & Oil Leaks",
   "Grease",
+  "Tyres",
+  "Headboard and Uprights",
   "Boom Structure",
   "Hydraulic Cylinders",
   "Hydraulic Hoses and Fittings",
   "Grab",
-  "Tracks & Sprockets",
   "All Excess Loose Debris Removed Pre-Shift",
-  "Escape Hatch & Hammer",
+  "Visibility Triangle",
   "Communication",
-  "Fire Systems"
+  "1 x 6kg Fire Extinguisher",
+  "Escape Hatch & Hammer"
 ]
 
 // ============================================================================
@@ -70,27 +71,28 @@ const itemIconMap: Record<string, string> = {
   "Hooter and Reverse Alarm": "hooters.png",
   "Gauges": "gauges.png",
   "Hydraulic Controls": "hydraulic-controls.png",
-  "Hydraulic Head Cut Off (Bail Lever)": "bail-lever.png",
+  "Safety/Emergency Cut Out System (Emergency Button)": "emergency-triangle.png", // fallback
   "Working Lights (LED)": "led.png",
   "Rotating Light": "rotating-light.png",
-  "Grill (Sieve)": "grill.png",
+  "Park Brake": "hand-brake.png",
   "Battery": "battery.png",
   "Radiator": "radiator.png",
-  "Air Pre-Cleaner": "air-pre-cleaner.png",
   "Fan Belt": "fan-belt.png",
-  "Fuel & Oil levels": "fuel-oil-levels.png",
-  "Fuel & Oil Leaks": "fuel-leaks.png",
   "Wiring": "wiring.png",
+  "Oil/Fluid/Air Levels": "oil-fluid-air-level.png",
+  "Fuel & Oil Leaks": "fuel-leaks.png",
   "Grease": "grease.png",
+  "Tyres": "types-spares.png",
+  "Headboard and Uprights": "boom-structure.png", // fallback
   "Boom Structure": "boom-structure.png",
   "Hydraulic Cylinders": "hydraulic-cylinders.png",
   "Hydraulic Hoses and Fittings": "hydraulic-hoses.png",
-  "Grab": "boom-structure.png", // fallback; replace if you have a grab-specific image
-  "Tracks & Sprockets": "tracks-sprockets.png",
+  "Grab": "boom-structure.png", // fallback
   "All Excess Loose Debris Removed Pre-Shift": "all-excess-loose-debris.png",
-  "Escape Hatch & Hammer": "escape-hatch.png",
+  "Visibility Triangle": "emergency-triangle.png", // fallback
   "Communication": "communication.png",
-  "Fire Systems": "fire-system.png"
+  "1 x 6kg Fire Extinguisher": "fire-extinguisher.png",
+  "Escape Hatch & Hammer": "escape-hatch.png"
 }
 
 // ============================================================================
@@ -153,7 +155,7 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function ExcavatorLoaderForm() {
+export function PonsseBisonForm() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -175,7 +177,7 @@ export function ExcavatorLoaderForm() {
     const month = (date.getMonth() + 1).toString().padStart(2, "0")
     const day = date.getDate().toString().padStart(2, "0")
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0")
-    return `EL-${year}${month}${day}-${random}`
+    return `PB-${year}${month}${day}-${random}`
   }, [])
 
   // ---------- Inspection Items State ----------
@@ -320,8 +322,8 @@ export function ExcavatorLoaderForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          formType: "excavator-loader",
-          formTitle: "Excavator Loader Pre-Shift Inspection Checklist",
+          formType: "ponsse-bison",
+          formTitle: "Ponsse Bison Pre-Shift Inspection Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
           data: {
@@ -374,15 +376,15 @@ export function ExcavatorLoaderForm() {
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">
-            Excavator Loader Pre-Shift Inspection Checklist
+            Ponsse Bison Pre-Shift Inspection Checklist
           </CardTitle>
           <CardDescription>
-            Document Ref: HSEMS/8.1.19/REG/002 | Rev. 4 | 27.03.2020
+            Document Ref: HSEMS/8.1.19/REG/022 | Rev. 3 | 27.03.2020
           </CardDescription>
         </CardHeader>
       </Card>
 
-      {/* ===== GENERAL INSTRUCTIONS (under the logo, with your requested text) ===== */}
+      {/* ===== GENERAL INSTRUCTIONS (under the logo) ===== */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
@@ -490,7 +492,7 @@ export function ExcavatorLoaderForm() {
               id="unitNumber"
               value={formData.unitNumber}
               onChange={(e) => setFormData((p) => ({ ...p, unitNumber: e.target.value }))}
-              placeholder="e.g. EXC-L-001"
+              placeholder="e.g. PB-001"
               required
             />
           </div>
@@ -620,7 +622,7 @@ export function ExcavatorLoaderForm() {
         <div>
           <span className="font-semibold">Document Reference No.</span>
           <br />
-          HSEMS / 8.1.19 / REG / 002
+          HSEMS / 8.1.19 / REG / 022
         </div>
         <div>
           <span className="font-semibold">Author</span>
@@ -630,7 +632,7 @@ export function ExcavatorLoaderForm() {
         <div>
           <span className="font-semibold">Revision</span>
           <br />
-          4
+          3
         </div>
         <div>
           <span className="font-semibold">Creation Date</span>

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChecklistRadioGroup } from "@/components/checklist-radio-group" // ✅ IMPORT ADDED
+import { ChecklistRadioGroup } from "@/components/checklist-radio-group"
 import { excavatorHarvesterItems, type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
@@ -1120,7 +1120,7 @@ export function ExcavatorHarvesterForm() {
                       key={`${sectionIdx}-${itemIdx}`}
                       label={item}
                       value={items[item]}
-                      onChange={(val: CheckStatus) => handleItemChange(item, val)} // ✅ explicit type
+                      onChange={(val: CheckStatus) => handleItemChange(item, val)}
                       index={itemIdx}
                     />
                   ))}
@@ -1131,30 +1131,27 @@ export function ExcavatorHarvesterForm() {
         </CardContent>
       </Card>
 
-      {/* DEFECTS SECTION */}
-      {hasDefects && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Defects Detected
-            </CardTitle>
-            <CardDescription>
-              Please provide details for all defects identified above.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              value={defectDetails}
-              onChange={(e) => setDefectDetails(e.target.value)}
-              placeholder="Describe the defects in detail..."
-              rows={4}
-              className="resize-none"
-              required={hasDefects}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* ===== DEFECTS SECTION (always visible) ===== */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            Are There Any Defects Selected
+          </CardTitle>
+          <CardDescription>
+            If &quot;Def&quot; is selected, please specify defects here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={defectDetails}
+            onChange={(e) => setDefectDetails(e.target.value)}
+            placeholder="Details of defect ..."
+            rows={4}
+            className="resize-none"
+          />
+        </CardContent>
+      </Card>
 
       {/* SIGNATURE PAD */}
       <Card>

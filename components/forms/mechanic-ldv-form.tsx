@@ -9,17 +9,132 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { ChecklistRadioGroup } from "@/components/checklist-radio-group"
-import { mechanicLDVItems, type CheckStatus } from "@/lib/types"
+import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+
+// ============================================================================
+// INSPECTION ITEMS – exactly as they appear in the Mechanic LDV PDF
+// ============================================================================
+const ALL_INSPECTION_ITEMS: string[] = [
+  "License and Phepha",
+  "Windscreen, Windows & Wipers",
+  "Cab",
+  "Mirrors",
+  "Seats",
+  "Safety Belt",
+  "Hooter and Reverse Alarm",
+  "Steering",
+  "Gauges",
+  "Working Lights",
+  "Clutch",
+  "Foot Brake",
+  "Hand Brake/Brake Cable",
+  "Bonnet Retaining Catch",
+  "Battery",
+  "Radiator",
+  "V- Belt",
+  "Wiring",
+  "Tyres & Spare",
+  "Wheel Nuts",
+  "Mud Flaps",
+  "Oil/Fluid/Air Levels"
+]
+
+// ============================================================================
+// PER‑ITEM ICON MAPPING – using the image filenames you provided
+// ============================================================================
+const itemIconMap: Record<string, string> = {
+  "License and Phepha": "license2.png",
+  "Windscreen, Windows & Wipers": "wipes.png",
+  "Cab": "cabs.png",
+  "Mirrors": "mirrors2.png",
+  "Seats": "seats.png",
+  "Safety Belt": "safety-belt.png",
+  "Hooter and Reverse Alarm": "hooters.png",
+  "Steering": "steering-column.png",
+  "Gauges": "gauges.png",
+  "Working Lights": "led.png",
+  "Clutch": "clutch.png",
+  "Foot Brake": "foot-brake.png",
+  "Hand Brake/Brake Cable": "hand-brake.png",
+  "Bonnet Retaining Catch": "bonnet-retaining-catch.png",
+  "Battery": "battery.png",
+  "Radiator": "radiator.png",
+  "V- Belt": "fan-belt.png",
+  "Wiring": "wiring.png",
+  "Tyres & Spare": "types-spares.png",
+  "Wheel Nuts": "wheel-nut.png",
+  "Mud Flaps": "mud-flap.png",
+  "Oil/Fluid/Air Levels": "oil-fluid-air-level.png"
+}
+
+// ============================================================================
+// PER‑ITEM ROW COMPONENT – unchanged
+// ============================================================================
+interface ItemRowProps {
+  item: string
+  value: CheckStatus
+  onChange: (value: CheckStatus) => void
+  iconSrc: string
+}
+
+function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
+  const isSelected = (status: CheckStatus) => value === status
+
+  return (
+    <div className="grid grid-cols-[1fr_auto_auto] items-center border-b border-gray-200 last:border-0">
+      <div className="py-3 pr-4 border-r border-gray-200">
+        <span className="text-sm font-medium text-foreground">{item}</span>
+      </div>
+      <div className="py-3 px-4 border-r border-gray-200 bg-gray-50 flex justify-center w-[150px]">
+        <Image
+          src={iconSrc}
+          alt={item}
+          width={150}
+          height={150}
+          className="object-contain"
+        />
+      </div>
+      <div className="py-3 pl-4 flex items-center gap-2">
+        <Button
+          type="button"
+          variant={isSelected("ok") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("ok") ? null : "ok")}
+          className={`w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}
+        >
+          OK
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("def") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("def") ? null : "def")}
+          className={`w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}
+        >
+          DEF
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("na") ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange(isSelected("na") ? null : "na")}
+          className={`w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}
+        >
+          N/A
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function MechanicLDVForm() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ---------- Driver Information ----------
+  // ---------- Driver Information (labels exactly as in PDF) ----------
   const [formData, setFormData] = useState({
     driverName: "",
     vehicleRegistration: "",
@@ -40,12 +155,12 @@ export function MechanicLDVForm() {
     return `ML-${year}${month}${day}-${random}`
   }, [])
 
-  // ---------- Inspection Items ----------
+  // ---------- Inspection Items State ----------
   const [items, setItems] = useState<Record<string, CheckStatus>>(
-    Object.fromEntries(mechanicLDVItems.map((item) => [item, null]))
+    Object.fromEntries(ALL_INSPECTION_ITEMS.map((item) => [item, null]))
   )
 
-  // ---------- Defect Details ----------
+  // ---------- Defect Details (always visible, as in PDF) ----------
   const [defectDetails, setDefectDetails] = useState("")
 
   // ---------- Signature Pad ----------
@@ -76,6 +191,28 @@ export function MechanicLDVForm() {
     ctx.lineWidth = 1
     ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
   }, [])
+
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+
+    if ("touches" in e) {
+      const touch = e.touches[0]
+      return {
+        x: (touch.clientX - rect.left) * scaleX,
+        y: (touch.clientY - rect.top) * scaleY,
+      }
+    } else {
+      return {
+        x: e.nativeEvent.offsetX * scaleX,
+        y: e.nativeEvent.offsetY * scaleY,
+      }
+    }
+  }
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault()
@@ -126,39 +263,15 @@ export function MechanicLDVForm() {
     setSignatureImage(null)
   }
 
-  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current
-    if (!canvas) return { x: 0, y: 0 }
-
-    const rect = canvas.getBoundingClientRect()
-    const scaleX = canvas.width / rect.width
-    const scaleY = canvas.height / rect.height
-
-    if ("touches" in e) {
-      const touch = e.touches[0]
-      return {
-        x: (touch.clientX - rect.left) * scaleX,
-        y: (touch.clientY - rect.top) * scaleY,
-      }
-    } else {
-      return {
-        x: e.nativeEvent.offsetX * scaleX,
-        y: e.nativeEvent.offsetY * scaleY,
-      }
-    }
-  }
-
   // ---------- Computed Values ----------
   const hasDefects = useMemo(() => Object.values(items).some((s) => s === "def"), [items])
   const allItemsChecked = useMemo(() => Object.values(items).every((s) => s !== null), [items])
   const checkedCount = useMemo(() => Object.values(items).filter((s) => s !== null).length, [items])
 
-  // ---------- Item Change Handler ----------
   const handleItemChange = (label: string, value: CheckStatus) => {
     setItems((prev) => ({ ...prev, [label]: value }))
   }
 
-  // ---------- Submit Handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -169,11 +282,6 @@ export function MechanicLDVForm() {
 
     if (!allItemsChecked) {
       toast.error("Please check all inspection items")
-      return
-    }
-
-    if (hasDefects && !defectDetails.trim()) {
-      toast.error("Please provide details for the defects")
       return
     }
 
@@ -251,7 +359,7 @@ export function MechanicLDVForm() {
         </CardHeader>
       </Card>
 
-      {/* ===== GENERAL INSTRUCTIONS ===== */}
+      {/* ===== GENERAL INSTRUCTIONS (now directly under the logo/header) ===== */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
@@ -263,7 +371,7 @@ export function MechanicLDVForm() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-amber-700">
-            The mechanic is to conduct a 10 minute physical walkabout of the vehicle on a daily basis
+            The driver is to conduct a 10 minute physical walkabout of the vehicle on a daily basis
             and assess the condition of the vehicle.
           </p>
           <p className="mt-2 text-sm text-amber-700">
@@ -280,9 +388,7 @@ export function MechanicLDVForm() {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="driverName" className="text-foreground">
-              Driver's Name <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="driverName">Driver's name <span className="text-destructive">*</span></Label>
             <Input
               id="driverName"
               value={formData.driverName}
@@ -292,21 +398,13 @@ export function MechanicLDVForm() {
             />
           </div>
 
-          {/* Auto-generated Document Number */}
           <div className="space-y-2">
-            <Label htmlFor="documentNo" className="text-foreground">Document No.</Label>
-            <Input
-              id="documentNo"
-              value={documentNo}
-              readOnly
-              className="bg-muted"
-            />
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="vehicleRegistration" className="text-foreground">
-              Vehicle Registration <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="vehicleRegistration">Vehicle registration <span className="text-destructive">*</span></Label>
             <Input
               id="vehicleRegistration"
               value={formData.vehicleRegistration}
@@ -317,7 +415,7 @@ export function MechanicLDVForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date" className="text-foreground">Date</Label>
+            <Label htmlFor="date">Date</Label>
             <Input
               id="date"
               type="date"
@@ -327,7 +425,7 @@ export function MechanicLDVForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="validTrainingCard" className="text-foreground">Valid Training Card (Exp. Date)</Label>
+            <Label htmlFor="validTrainingCard">Valid training card (exp date)</Label>
             <Input
               id="validTrainingCard"
               type="date"
@@ -337,7 +435,7 @@ export function MechanicLDVForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="driversLicenseAvailable" className="text-foreground">Driver's License (Exp. Date)</Label>
+            <Label htmlFor="driversLicenseAvailable">Driver's license available (exp date)</Label>
             <Input
               id="driversLicenseAvailable"
               type="date"
@@ -347,7 +445,7 @@ export function MechanicLDVForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="odometerStart" className="text-foreground">Odometer Start</Label>
+            <Label htmlFor="odometerStart">Odometer start</Label>
             <Input
               id="odometerStart"
               type="number"
@@ -358,7 +456,7 @@ export function MechanicLDVForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="odometerStop" className="text-foreground">Odometer Stop</Label>
+            <Label htmlFor="odometerStop">Odometer stop</Label>
             <Input
               id="odometerStop"
               type="number"
@@ -385,10 +483,10 @@ export function MechanicLDVForm() {
       {/* ===== PROGRESS ===== */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
-          Progress: {checkedCount} / {mechanicLDVItems.length} items checked
+          Progress: {checkedCount} / {ALL_INSPECTION_ITEMS.length} items checked
         </span>
         {allItemsChecked && (
-          <span className="flex items-center gap-1 text-[hsl(142,76%,36%)]">
+          <span className="flex items-center gap-1 text-green-600">
             <CheckCircle2 className="h-4 w-4" />
             All items checked
           </span>
@@ -397,52 +495,56 @@ export function MechanicLDVForm() {
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-primary transition-all"
-          style={{ width: `${(checkedCount / mechanicLDVItems.length) * 100}%` }}
+          style={{ width: `${(checkedCount / ALL_INSPECTION_ITEMS.length) * 100}%` }}
         />
       </div>
 
-      {/* ===== INSPECTION ITEMS (flat list) ===== */}
+      {/* ===== INSPECTION ITEMS – flat list ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base text-foreground">Inspection Items</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {mechanicLDVItems.map((item, idx) => (
-            <ChecklistRadioGroup
-              key={item}
-              label={item}
-              value={items[item]}
-              onChange={(val) => handleItemChange(item, val)}
-              index={idx}
-            />
-          ))}
+          {ALL_INSPECTION_ITEMS.map((item) => {
+            const iconFile = itemIconMap[item]
+            if (!iconFile) {
+              console.warn(`No icon mapped for item: ${item}`)
+              return null
+            }
+            return (
+              <ItemRow
+                key={item}
+                item={item}
+                value={items[item]}
+                onChange={(val) => handleItemChange(item, val)}
+                iconSrc={`/images/${iconFile}`}
+              />
+            )
+          })}
         </CardContent>
       </Card>
 
-      {/* ===== DEFECTS SECTION ===== */}
-      {hasDefects && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Defects Detected
-            </CardTitle>
-            <CardDescription>
-              Please provide details for all defects identified above.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              value={defectDetails}
-              onChange={(e) => setDefectDetails(e.target.value)}
-              placeholder="Describe the defects in detail..."
-              rows={4}
-              className="resize-none"
-              required={hasDefects}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* ===== DEFECTS SECTION (always visible, as in PDF) ===== */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            Are There Any Defects Selected
+          </CardTitle>
+          <CardDescription>
+            If "Def" is selected, please specify defects here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={defectDetails}
+            onChange={(e) => setDefectDetails(e.target.value)}
+            placeholder="Details of defect ..."
+            rows={4}
+            className="resize-none"
+          />
+        </CardContent>
+      </Card>
 
       {/* ===== SIGNATURE PAD ===== */}
       <Card>
@@ -483,6 +585,30 @@ export function MechanicLDVForm() {
       </Card>
 
       <Separator />
+
+      {/* ===== FOOTER ===== */}
+      <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground border-t pt-4">
+        <div>
+          <span className="font-semibold">Document Reference No.</span>
+          <br />
+          HSEMS / 8.1.19 / REG / 017
+        </div>
+        <div>
+          <span className="font-semibold">Author</span>
+          <br />
+          HSE Manager
+        </div>
+        <div>
+          <span className="font-semibold">Revision</span>
+          <br />
+          2
+        </div>
+        <div>
+          <span className="font-semibold">Creation Date</span>
+          <br />
+          27.03.2020
+        </div>
+      </div>
 
       {/* ===== SUBMIT BUTTONS ===== */}
       <div className="flex items-center justify-end gap-4">
