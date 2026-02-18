@@ -1,6 +1,23 @@
-import type { Submission, CheckStatus } from "@/lib/types"
+import type { Submission, CheckStatus, FormDataUnion } from "@/lib/types"
 import { getBrand } from '@/lib/brand';
 import type { Brand } from '@/lib/brand';
+
+// ============================================================================
+// TYPE GUARDS – safely check for optional properties using Extract
+// ============================================================================
+type WithItems = Extract<FormDataUnion, { items: any }>;
+type WithDefectDetails = Extract<FormDataUnion, { defectDetails: any }>;
+type WithSignature = Extract<FormDataUnion, { signature: any }>;
+
+function hasItems(data: FormDataUnion): data is WithItems {
+  return 'items' in data;
+}
+function hasDefectDetails(data: FormDataUnion): data is WithDefectDetails {
+  return 'defectDetails' in data;
+}
+function hasSignature(data: FormDataUnion): data is WithSignature {
+  return 'signature' in data;
+}
 
 // ============================================================================
 // EXCAVATOR HARVESTER SECTIONS (34 sections)
@@ -963,6 +980,8 @@ function formTypeLabel(type: string): string {
       return "Dezzi Timber Truck Pre-Shift Checklist"
     case "diesel-cart-trailer":
       return "Diesel Cart Trailer Inspection Checklist"
+    case "cintasign-shorthaul":
+      return "Cintasign Shorthaul Trip Sheet"
     default:
       return type
   }
@@ -1010,6 +1029,8 @@ function getDocumentDetails(type: string): { ref: string; rev: string; date: str
       return { ref: "HSEMS/8.1.19/REG/004", rev: "4", date: "27.03.2020" }
     case "diesel-cart-trailer":
       return { ref: "HSEMS/8.1.9/REG/014", rev: "2", date: "27.03.2020" }
+    case "cintasign-shorthaul":
+      return { ref: "CINT/LOG/001", rev: "1", date: "01.01.2025" }
     default:
       return { ref: "HSEMS/8.1.19/REG/000", rev: "0", date: "01.01.2020" }
   }
@@ -1033,7 +1054,7 @@ function formatFieldKey(key: string): string {
 // ============================================================================
 const brandLogoFile: Record<Brand, string> = {
   ringomode: 'ringomode-logo.png',
-  cintasign: 'cintasign-logo.jpg', // .jpg for Cintasign
+  cintasign: 'cintasign-logo.jpg',
 };
 
 async function getBrandLogoBase64(brand: Brand): Promise<string> {
@@ -1064,7 +1085,7 @@ async function getBrandLogoBase64(brand: Brand): Promise<string> {
 }
 
 // ============================================================================
-// CSV EXPORTS (updated to include brand name)
+// CSV EXPORTS (with type guards)
 // ============================================================================
 function escapeCSV(val: string): string {
   if (val.includes(",") || val.includes('"') || val.includes("\n")) {
@@ -1091,8 +1112,8 @@ export function exportSubmissionsToCSV(submissions: Submission[]): void {
         minute: "2-digit",
       }),
       sub.hasDefects ? "Defects Found" : "Clean",
-      sub.data.defectDetails || "",
-      sub.data.signature || "",
+      hasDefectDetails(sub.data) ? sub.data.defectDetails || "" : "",
+      hasSignature(sub.data) ? sub.data.signature || "" : "",
     ])
   }
   const csv = rows.map((r) => r.map(escapeCSV).join(",")).join("\n")
@@ -1126,23 +1147,26 @@ export function exportSingleSubmissionToCSV(sub: Submission): void {
   }
   rows.push([])
   rows.push(["Inspection Item", "Status"])
-  if (sub.data.items) {
+  if (hasItems(sub.data)) {
+    // Narrowed type: sub.data is now WithItems
     for (const [item, status] of Object.entries(sub.data.items)) {
       rows.push([item, statusLabel(status as CheckStatus)])
     }
   }
   rows.push([])
-  if (sub.data.defectDetails) {
+  if (hasDefectDetails(sub.data) && sub.data.defectDetails) {
     rows.push(["Defect Details", sub.data.defectDetails])
   }
-  rows.push(["Signature", sub.data.signature || "-"])
+  if (hasSignature(sub.data) && sub.data.signature) {
+    rows.push(["Signature", sub.data.signature])
+  }
   const csv = rows.map((r) => r.map(escapeCSV).join(",")).join("\n")
   const filename = `${brand}-${sub.formType}-${sub.submittedBy.replace(/\s/g, "_")}-${sub.id.slice(0, 8)}.csv`
   downloadFile(csv, filename, "text/csv;charset=utf-8;")
 }
 
 // ============================================================================
-// PDF EXPORT – now using submission's brand
+// PDF EXPORT – now with type guards and proper narrowing
 // ============================================================================
 export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   const { default: jsPDF } = await import("jspdf")
@@ -1250,12 +1274,12 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   }
 
   // ==========================================================================
-  // INSPECTION ITEMS – HANDLE BY FORM TYPE
+  // INSPECTION / DATA SECTIONS – HANDLE BY FORM TYPE
   // ==========================================================================
   let y = (doc as any).lastAutoTable?.finalY ?? yOffset + 33
   y += 10
 
-  // Preload icons helper
+  // Preload icons helper (used only by forms that have icons)
   const preloadIcons = async (filenames: string[]): Promise<Map<string, string>> => {
     const map = new Map<string, string>();
     const unique = Array.from(new Set(filenames));
@@ -1268,126 +1292,211 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
 
   if (sub.formType === "excavator-harvester") {
     // ----- EXCAVATOR HARVESTER: GROUPED SECTIONS WITH ICON IN THE MIDDLE ROW -----
-    for (const section of sections) {
-      const sectionItems = section.items.filter((item: string): boolean => 
-        sub.data.items !== undefined && item in sub.data.items
-      )
-      if (sectionItems.length === 0) continue
+    if (!hasItems(sub.data)) {
+      console.warn("No items found for excavator-harvester");
+    } else {
+      const data = sub.data; // now narrowed to WithItems
+      for (const section of sections) {
+        const sectionItems = section.items.filter((item: string): boolean => 
+          item in data.items
+        )
+        if (sectionItems.length === 0) continue
 
-      if (y > pageHeight - 70) {
-        doc.addPage()
-        y = 20
-      }
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(34, 100, 54)
-      doc.text(section.title, 14, y)
-      y += 5
-
-      let iconBase64: string | null = null
-      const iconFilename = iconMap[section.title]
-      if (iconFilename) {
-        iconBase64 = await getImageBase64(iconFilename)
-      }
-
-      const splitIndex = Math.floor(sectionItems.length / 2)
-      const firstHalf: string[] = sectionItems.slice(0, splitIndex)
-      const secondHalf: string[] = sectionItems.slice(splitIndex)
-
-      // Build table rows: all items in order (no separate icon row)
-      const tableRows: any[] = []
-
-      firstHalf.forEach((item: string): void => {
-        tableRows.push([
-          item,
-          '',
-          statusLabel(sub.data.items?.[item] as CheckStatus)
-        ])
-      })
-
-      secondHalf.forEach((item: string): void => {
-        tableRows.push([
-          item,
-          '',
-          statusLabel(sub.data.items?.[item] as CheckStatus)
-        ])
-      })
-
-      ;(doc as any).autoTable({
-        startY: y,
-        head: [['Inspection Item', '', 'Status']],
-        body: tableRows,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [34, 100, 54],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          fontSize: 8,
-        },
-        styles: {
-          fontSize: 8,
-          cellPadding: 4,
-          lineColor: [200, 200, 200],
-          lineWidth: 0.2,
-        },
-        columnStyles: {
-          0: { cellWidth: 110, fontStyle: 'bold' },
-          1: { cellWidth: 30, halign: 'center' },
-          2: { cellWidth: 30, halign: 'center' }
-        },
-        margin: { left: 20, right: 20 },
-        didParseCell: (data: Record<string, any>): void => {
-          if (data.section === 'body') {
-            data.cell.minHeight = 20;
-          }
-          if (data.section === 'body' && data.column.index === 2) {
-            const val = data.row.raw[2] as string
-            if (val === 'Defect') {
-              data.cell.styles.textColor = [220, 50, 50]
-              data.cell.styles.fontStyle = 'bold'
-            } else if (val === 'OK') {
-              data.cell.styles.textColor = [34, 139, 34]
-            } else if (val === 'N/A') {
-              data.cell.styles.textColor = [100, 100, 100]
-            }
-          }
-          if (data.section === 'body' && data.column.index === 1) {
-            data.cell.styles.lineWidth = 0;
-          }
-        },
-        didDrawCell: (data: Record<string, any>): void => {
-          // Draw icon in the middle column of the first row of the second half
-          if (
-            data.section === 'body' &&
-            data.column.index === 1 &&
-            data.row.index === firstHalf.length &&
-            iconBase64 !== null
-          ) {
-            try {
-              const cellWidth: number = data.cell.width
-              const cellHeight: number = data.cell.height
-              const maxImgSize = Math.min(cellWidth, cellHeight) - 4;
-              const imgSize = Math.min(25, maxImgSize);
-              const x: number = data.cell.x + (cellWidth - imgSize) / 2
-              const y: number = data.cell.y + (cellHeight - imgSize) / 2
-              doc.addImage(iconBase64, 'PNG', x, y, imgSize, imgSize)
-            } catch (e) {
-              console.error(`Failed to draw icon for ${section.title}`, e)
-            }
-          }
+        if (y > pageHeight - 70) {
+          doc.addPage()
+          y = 20
         }
-      })
+
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(34, 100, 54)
+        doc.text(section.title, 14, y)
+        y += 5
+
+        let iconBase64: string | null = null
+        const iconFilename = iconMap[section.title]
+        if (iconFilename) {
+          iconBase64 = await getImageBase64(iconFilename)
+        }
+
+        const splitIndex = Math.floor(sectionItems.length / 2)
+        const firstHalf: string[] = sectionItems.slice(0, splitIndex)
+        const secondHalf: string[] = sectionItems.slice(splitIndex)
+
+        // Build table rows: all items in order (no separate icon row)
+        const tableRows: any[] = []
+
+        firstHalf.forEach((item: string): void => {
+          tableRows.push([
+            item,
+            '',
+            statusLabel(data.items[item] as CheckStatus)
+          ])
+        })
+
+        secondHalf.forEach((item: string): void => {
+          tableRows.push([
+            item,
+            '',
+            statusLabel(data.items[item] as CheckStatus)
+          ])
+        })
+
+        ;(doc as any).autoTable({
+          startY: y,
+          head: [['Inspection Item', '', 'Status']],
+          body: tableRows,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [34, 100, 54],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 8,
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 4,
+            lineColor: [200, 200, 200],
+            lineWidth: 0.2,
+          },
+          columnStyles: {
+            0: { cellWidth: 110, fontStyle: 'bold' },
+            1: { cellWidth: 30, halign: 'center' },
+            2: { cellWidth: 30, halign: 'center' }
+          },
+          margin: { left: 20, right: 20 },
+          didParseCell: (data: Record<string, any>): void => {
+            if (data.section === 'body') {
+              data.cell.minHeight = 20;
+            }
+            if (data.section === 'body' && data.column.index === 2) {
+              const val = data.row.raw[2] as string
+              if (val === 'Defect') {
+                data.cell.styles.textColor = [220, 50, 50]
+                data.cell.styles.fontStyle = 'bold'
+              } else if (val === 'OK') {
+                data.cell.styles.textColor = [34, 139, 34]
+              } else if (val === 'N/A') {
+                data.cell.styles.textColor = [100, 100, 100]
+              }
+            }
+            if (data.section === 'body' && data.column.index === 1) {
+              data.cell.styles.lineWidth = 0;
+            }
+          },
+          didDrawCell: (data: Record<string, any>): void => {
+            // Draw icon in the middle column of the first row of the second half
+            if (
+              data.section === 'body' &&
+              data.column.index === 1 &&
+              data.row.index === firstHalf.length &&
+              iconBase64 !== null
+            ) {
+              try {
+                const cellWidth: number = data.cell.width
+                const cellHeight: number = data.cell.height
+                const maxImgSize = Math.min(cellWidth, cellHeight) - 4;
+                const imgSize = Math.min(25, maxImgSize);
+                const x: number = data.cell.x + (cellWidth - imgSize) / 2
+                const y: number = data.cell.y + (cellHeight - imgSize) / 2
+                doc.addImage(iconBase64, 'PNG', x, y, imgSize, imgSize)
+              } catch (e) {
+                console.error(`Failed to draw icon for ${section.title}`, e)
+              }
+            }
+          }
+        })
+
+        y = (doc as any).lastAutoTable.finalY + 15;
+      }
+    }
+  } else if (sub.formType === "cintasign-shorthaul") {
+    // ----- CINTASIGN SHORTHAUL: render fleet and breakdown tables -----
+    const data = sub.data as any; // safe because we've checked formType
+
+    // Fleet entries table
+    if (data.fleetEntries && data.fleetEntries.length > 0) {
+      if (y > pageHeight - 70) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(34, 100, 54);
+      doc.text("Fleet Details", 14, y);
+      y += 5;
+
+      const fleetHeaders = ["Fleet No", "Operator", "Shift", "Compartment", "Loads", "Est Tons", "Open", "Close", "Worked", "Loads/hr", "Tons/hr"];
+      const fleetRows = data.fleetEntries.map((entry: any) => [
+        entry.fleetNo,
+        entry.operator,
+        entry.shift,
+        entry.compartment,
+        entry.noOfLoads,
+        entry.estTons,
+        entry.hoursOpen,
+        entry.hoursClose,
+        entry.hoursWorked,
+        entry.loadsPerHour,
+        entry.tonsPerHour,
+      ]);
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [fleetHeaders],
+        body: fleetRows,
+        theme: 'grid',
+        headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 7, cellPadding: 2 },
+        margin: { left: 14, right: 14 },
+      });
 
       y = (doc as any).lastAutoTable.finalY + 15;
     }
+
+    // Breakdown entries table
+    if (data.breakdownEntries && data.breakdownEntries.length > 0) {
+      if (y > pageHeight - 70) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(34, 100, 54);
+      doc.text("Breakdown Hours & Details", 14, y);
+      y += 5;
+
+      const breakdownHeaders = ["Machine ID", "Operator", "Stop", "Start", "Details"];
+      const breakdownRows = data.breakdownEntries.map((entry: any) => [
+        entry.machineId,
+        entry.operator,
+        entry.stop,
+        entry.start,
+        entry.details,
+      ]);
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [breakdownHeaders],
+        body: breakdownRows,
+        theme: 'grid',
+        headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 7, cellPadding: 2 },
+        margin: { left: 14, right: 14 },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // Skip the remaining sections (defects, signature) for this form type
   } else {
     // ----- ALL OTHER FORMS: PER‑ITEM ICON TABLE -----
     const iconMapForForm = getIconMapForForm(sub.formType);
-    if (!sub.data.items) {
+    if (!hasItems(sub.data)) {
       console.warn("No inspection items found");
     } else {
-      const items = Object.keys(sub.data.items).sort();
+      const data = sub.data; // now narrowed to WithItems
+      const items = Object.keys(data.items).sort();
       
       // Collect all icon filenames needed
       const iconFilenames = items
@@ -1396,13 +1505,14 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
       
       const iconBase64Map = await preloadIcons(iconFilenames);
 
+      // ✅ FIXED: Use narrowed 'data' instead of 'sub.data'
       const tableRows: any[] = items.map(item => [
         item,
         '',
-        statusLabel(sub.data.items[item] as CheckStatus)
+        statusLabel(data.items[item] as CheckStatus)
       ]);
 
-      ;(doc as any).autoTable({
+      (doc as any).autoTable({
         startY: y,
         head: [['Inspection Item', '', 'Status']],
         body: tableRows,
@@ -1468,82 +1578,76 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
       });
       y = (doc as any).lastAutoTable.finalY + 15;
     }
-  }
 
-  // ----- Defect Details -----
-  if (sub.data.defectDetails) {
-    y += 5;
-    if (y > pageHeight - 50) {
-      doc.addPage()
-      y = 20
+    // ----- Defect Details -----
+    if (hasDefectDetails(sub.data) && sub.data.defectDetails) {
+      y += 5;
+      if (y > pageHeight - 50) {
+        doc.addPage()
+        y = 20
+      }
+      doc.setFontSize(10)
+      doc.setTextColor(220, 50, 50)
+      doc.text("Defect Details:", 14, y)
+      y += 7
+      doc.setFontSize(8)
+      doc.setTextColor(60)
+      const lines: string[] = doc.splitTextToSize(sub.data.defectDetails, pageWidth - 28)
+      doc.text(lines, 14, y)
+      y += lines.length * 5 + 10
     }
-    doc.setFontSize(10)
-    doc.setTextColor(220, 50, 50)
-    doc.text("Defect Details:", 14, y)
-    y += 7
-    doc.setFontSize(8)
-    doc.setTextColor(60)
-    const lines: string[] = doc.splitTextToSize(sub.data.defectDetails as string, pageWidth - 28)
-    doc.text(lines, 14, y)
-    y += lines.length * 5 + 10
-  }
 
-  // ----- Signature (professional green label) -----
-  if (y > pageHeight - 70) {
-    doc.addPage()
-    y = 20
-  }
+    // ----- Signature -----
+    if (hasSignature(sub.data) && sub.data.signature) {
+      if (y > pageHeight - 70) {
+        doc.addPage()
+        y = 20
+      }
 
-  // Draw a light gray box with border
-  const boxX = 14
-  const boxY = y - 5
-  const boxWidth = 100
-  const boxHeight = 30
+      const boxX = 14
+      const boxY = y - 5
+      const boxWidth = 100
+      const boxHeight = 30
 
-  doc.setFillColor(250, 250, 250) // almost white
-  doc.rect(boxX, boxY, boxWidth, boxHeight, 'F')
-  doc.setDrawColor(180, 180, 180)
-  doc.setLineWidth(0.5)
-  doc.rect(boxX, boxY, boxWidth, boxHeight, 'S')
+      doc.setFillColor(250, 250, 250)
+      doc.rect(boxX, boxY, boxWidth, boxHeight, 'F')
+      doc.setDrawColor(180, 180, 180)
+      doc.setLineWidth(0.5)
+      doc.rect(boxX, boxY, boxWidth, boxHeight, 'S')
 
-  // Green label above the box
-  doc.setFontSize(9)
-  doc.setTextColor(0, 128, 0) // green
-  doc.setFont('helvetica', 'bold')
-  doc.text("Signature", boxX, boxY - 4)
-  doc.setFont('helvetica', 'normal')
-
-  // Signature content (if image, keep original; if text, use green)
-  const signature = sub.data.signature
-  if (signature && typeof signature === 'string' && signature.startsWith('data:image')) {
-    try {
-      // Image signature – fit inside box with padding
-      const imgSize = Math.min(boxHeight - 8, boxWidth - 8)
-      const imgX = boxX + (boxWidth - imgSize) / 2
-      const imgY = boxY + (boxHeight - imgSize) / 2
-      doc.addImage(signature, 'PNG', imgX, imgY, imgSize, imgSize)
-    } catch (error) {
-      console.error('Failed to add signature image, falling back to text', error)
       doc.setFontSize(9)
-      doc.setFont("helvetica", "italic")
-      doc.setTextColor(0, 128, 0) // green
-      doc.text("[Signature image failed to load]", boxX + 5, boxY + boxHeight / 2 + 3)
-      doc.setFont("helvetica", "normal")
+      doc.setTextColor(0, 128, 0)
+      doc.setFont('helvetica', 'bold')
+      doc.text("Signature", boxX, boxY - 4)
+      doc.setFont('helvetica', 'normal')
+
+      const signature = sub.data.signature
+      if (signature && typeof signature === 'string' && signature.startsWith('data:image')) {
+        try {
+          const imgSize = Math.min(boxHeight - 8, boxWidth - 8)
+          const imgX = boxX + (boxWidth - imgSize) / 2
+          const imgY = boxY + (boxHeight - imgSize) / 2
+          doc.addImage(signature, 'PNG', imgX, imgY, imgSize, imgSize)
+        } catch (error) {
+          console.error('Failed to add signature image, falling back to text', error)
+          doc.setFontSize(9)
+          doc.setFont("helvetica", "italic")
+          doc.setTextColor(0, 128, 0)
+          doc.text("[Signature image failed to load]", boxX + 5, boxY + boxHeight / 2 + 3)
+          doc.setFont("helvetica", "normal")
+        }
+      } else {
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "italic")
+        doc.setTextColor(0, 128, 0)
+        const sigText = signature || "-"
+        doc.text(sigText, boxX + 5, boxY + boxHeight / 2 + 3)
+        doc.setFont("helvetica", "normal")
+      }
+      y += boxHeight + 15
     }
-  } else {
-    // Text signature – draw in green
-    doc.setFontSize(9)
-    doc.setFont("helvetica", "italic")
-    doc.setTextColor(0, 128, 0) // green
-    const sigText = (signature as string) || "-"
-    doc.text(sigText, boxX + 5, boxY + boxHeight / 2 + 3)
-    doc.setFont("helvetica", "normal")
   }
 
-  // Reset text color for subsequent content
-  doc.setTextColor(60, 60, 60)
-
-  y += boxHeight + 15
   // ----- Footer with dynamic brand name -----
   const pageCount: number = doc.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {

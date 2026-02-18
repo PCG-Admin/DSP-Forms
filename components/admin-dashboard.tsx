@@ -60,6 +60,19 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+// ============================================================================
+// TYPE GUARDS
+// ============================================================================
+function hasItems(data: any): data is { items: Record<string, CheckStatus> } {
+  return data && typeof data === 'object' && 'items' in data;
+}
+function hasDefectDetails(data: any): data is { defectDetails: string } {
+  return data && typeof data === 'object' && 'defectDetails' in data;
+}
+function hasSignature(data: any): data is { signature: string } {
+  return data && typeof data === 'object' && 'signature' in data;
+}
+
 function StatusBadge({ status }: { status: CheckStatus }) {
   if (!status) return <span className="text-muted-foreground">-</span>
   const map = {
@@ -92,7 +105,7 @@ function BrandBadge({ brand }: { brand?: string }) {
   );
 }
 
-// Form type label (unchanged)
+// Form type label (updated to include cintasign-shorthaul)
 function formTypeLabel(type: string) {
   switch (type) {
     case "light-delivery":
@@ -135,12 +148,14 @@ function formTypeLabel(type: string) {
       return "Dezzi Timber Truck"
     case "diesel-cart-trailer":
       return "Diesel Cart Trailer"
+    case "cintasign-shorthaul":
+      return "Cintasign Shorthaul"
     default:
       return type
   }
 }
 
-// Form icon mapping (unchanged)
+// Form icon mapping (updated for cintasign-shorthaul)
 function getFormIcon(type: string) {
   switch (type) {
     case "light-delivery":
@@ -183,6 +198,8 @@ function getFormIcon(type: string) {
       return <Truck className="h-4 w-4 text-muted-foreground" />
     case "diesel-cart-trailer":
       return <Container className="h-4 w-4 text-muted-foreground" />
+    case "cintasign-shorthaul":
+      return <Truck className="h-4 w-4 text-muted-foreground" />
     default:
       return <FileText className="h-4 w-4 text-muted-foreground" />
   }
@@ -195,13 +212,103 @@ function formatFieldKey(key: string): string {
     .trim()
 }
 
-// Preview Component – now with dynamic brand logo
+// Preview Component – with type guards
 function SubmissionPreview({ submission }: { submission: Submission }) {
-  // Determine which logo to show based on brand
   const logoPath = submission.brand === 'cintasign' 
     ? '/images/cintasign-logo.jpg' 
     : '/images/ringomode-logo.png';
   const logoAlt = submission.brand === 'cintasign' ? 'Cintasign Logo' : 'Ringomode DSP Logo';
+
+  // Helper to render fleet entries if present (specific to cintasign-shorthaul)
+  const renderFleetEntries = () => {
+    if (submission.formType !== 'cintasign-shorthaul') return null;
+    const data = submission.data as any; // we know it's the shorthaul type
+    if (!data.fleetEntries || data.fleetEntries.length === 0) return null;
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-foreground">Fleet Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="p-2 text-left">Fleet No</th>
+                  <th className="p-2 text-left">Operator</th>
+                  <th className="p-2 text-left">Shift</th>
+                  <th className="p-2 text-left">Compartment</th>
+                  <th className="p-2 text-left">Loads</th>
+                  <th className="p-2 text-left">Est Tons</th>
+                  <th className="p-2 text-left">Open</th>
+                  <th className="p-2 text-left">Close</th>
+                  <th className="p-2 text-left">Worked</th>
+                  <th className="p-2 text-left">Loads/hr</th>
+                  <th className="p-2 text-left">Tons/hr</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.fleetEntries.map((entry: any, idx: number) => (
+                  <tr key={idx} className="border-b">
+                    <td className="p-2">{entry.fleetNo}</td>
+                    <td className="p-2">{entry.operator}</td>
+                    <td className="p-2">{entry.shift}</td>
+                    <td className="p-2">{entry.compartment}</td>
+                    <td className="p-2">{entry.noOfLoads}</td>
+                    <td className="p-2">{entry.estTons}</td>
+                    <td className="p-2">{entry.hoursOpen}</td>
+                    <td className="p-2">{entry.hoursClose}</td>
+                    <td className="p-2">{entry.hoursWorked}</td>
+                    <td className="p-2">{entry.loadsPerHour}</td>
+                    <td className="p-2">{entry.tonsPerHour}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderBreakdownEntries = () => {
+    if (submission.formType !== 'cintasign-shorthaul') return null;
+    const data = submission.data as any;
+    if (!data.breakdownEntries || data.breakdownEntries.length === 0) return null;
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-foreground">Breakdown Hours & Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="p-2 text-left">Machine ID</th>
+                  <th className="p-2 text-left">Operator</th>
+                  <th className="p-2 text-left">Stop</th>
+                  <th className="p-2 text-left">Start</th>
+                  <th className="p-2 text-left">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.breakdownEntries.map((entry: any, idx: number) => (
+                  <tr key={idx} className="border-b">
+                    <td className="p-2">{entry.machineId}</td>
+                    <td className="p-2">{entry.operator}</td>
+                    <td className="p-2">{entry.stop}</td>
+                    <td className="p-2">{entry.start}</td>
+                    <td className="p-2">{entry.details}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6 print:space-y-4" id="submission-preview">
@@ -242,7 +349,7 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
         )}
       </div>
 
-      {/* Form Fields */}
+      {/* Form Fields – always show basic fields */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm text-foreground">Form Information</CardTitle>
@@ -259,7 +366,9 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
                   key !== "items" &&
                   key !== "hasDefects" &&
                   key !== "defectDetails" &&
-                  key !== "signature"
+                  key !== "signature" &&
+                  key !== "fleetEntries" &&
+                  key !== "breakdownEntries"
               )
               .map(([key, value]) => (
                 <div key={key} className="flex flex-col">
@@ -273,64 +382,76 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
         </CardContent>
       </Card>
 
-      {/* Inspection Items */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground">Inspection Items</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          {/* Table header */}
-          <div className="flex items-center justify-between rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">
-            <span>Item</span>
-            <span>Status</span>
-          </div>
-          {submission.data.items &&
-            Object.entries(submission.data.items).map(([item, status], idx) => (
-              <div
-                key={item}
-                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
-                  status === "def"
-                    ? "bg-destructive/5"
-                    : idx % 2 === 0
-                      ? "bg-muted/30"
-                      : "bg-card"
-                }`}
-              >
-                <span className="text-foreground">{item}</span>
-                <StatusBadge status={status as CheckStatus} />
-              </div>
-            ))}
-        </CardContent>
-      </Card>
+      {/* Conditional rendering based on form type */}
+      {submission.formType === "cintasign-shorthaul" ? (
+        <>
+          {renderFleetEntries()}
+          {renderBreakdownEntries()}
+        </>
+      ) : (
+        <>
+          {/* Inspection Items – only if data has items */}
+          {hasItems(submission.data) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-foreground">Inspection Items</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                <div className="flex items-center justify-between rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">
+                  <span>Item</span>
+                  <span>Status</span>
+                </div>
+                {Object.entries(submission.data.items).map(([item, status], idx) => (
+                  <div
+                    key={item}
+                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
+                      status === "def"
+                        ? "bg-destructive/5"
+                        : idx % 2 === 0
+                          ? "bg-muted/30"
+                          : "bg-card"
+                    }`}
+                  >
+                    <span className="text-foreground">{item}</span>
+                    <StatusBadge status={status as CheckStatus} />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Defect Details */}
-      {submission.data.defectDetails && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm text-destructive">
-              <AlertTriangle className="h-4 w-4" />
-              Defect Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-foreground">{submission.data.defectDetails}</p>
-          </CardContent>
-        </Card>
+          {/* Defect Details – only if data has defectDetails */}
+          {hasDefectDetails(submission.data) && submission.data.defectDetails && (
+            <Card className="border-destructive/30 bg-destructive/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  Defect Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground">{submission.data.defectDetails}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Signature – only if data has signature */}
+          {hasSignature(submission.data) && submission.data.signature && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-foreground">Signature</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="inline-block border-b-2 border-foreground/20 pb-1">
+                  <p className="font-serif text-base italic text-foreground">
+                    {submission.data.signature}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
-
-      {/* Signature */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-foreground">Signature</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="inline-block border-b-2 border-foreground/20 pb-1">
-            <p className="font-serif text-base italic text-foreground">
-              {submission.data.signature || "-"}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
@@ -464,7 +585,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
 
   return (
     <div className="space-y-6 p-4 lg:p-8">
-      {/* Header – removed logo, kept title and notifications */}
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
@@ -530,7 +651,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
         </div>
       </div>
 
-      {/* Stats Cards (unchanged) */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 pt-6">
@@ -623,6 +744,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                 <SelectItem value="daily-machine-checklist">Daily Machine</SelectItem>
                 <SelectItem value="dezzi-timber-truck">Dezzi Timber</SelectItem>
                 <SelectItem value="diesel-cart-trailer">Diesel Cart</SelectItem>
+                <SelectItem value="cintasign-shorthaul">Cintasign Shorthaul</SelectItem>
               </SelectContent>
             </Select>
             <Select value={defectFilter} onValueChange={setDefectFilter}>
@@ -667,7 +789,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                   <TableRow className="bg-muted/50">
                     <TableHead className="text-foreground">Submitted By</TableHead>
                     <TableHead className="text-foreground">Form Type</TableHead>
-                    <TableHead className="text-foreground">Brand</TableHead> {/* NEW COLUMN */}
+                    <TableHead className="text-foreground">Brand</TableHead>
                     <TableHead className="text-foreground">Date</TableHead>
                     <TableHead className="text-foreground">Status</TableHead>
                     <TableHead className="text-right text-foreground">Actions</TableHead>
@@ -895,84 +1017,14 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
 
                     <Separator />
 
-                    {/* Form Fields */}
+                    {/* Raw Data - pretty‑printed JSON for better visibility */}
                     <div>
                       <h4 className="mb-2 text-sm font-semibold text-foreground">
-                        Form Information
+                        Full Submission Data
                       </h4>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        {Object.entries(selectedSubmission.data)
-                          .filter(
-                            ([key]) =>
-                              key !== "items" &&
-                              key !== "hasDefects" &&
-                              key !== "defectDetails" &&
-                              key !== "signature"
-                          )
-                          .map(([key, value]) => (
-                            <div key={key} className="flex flex-col">
-                              <span className="text-xs text-muted-foreground">
-                                {formatFieldKey(key)}
-                              </span>
-                              <span className="font-medium text-foreground">
-                                {String(value) || "-"}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Inspection Items */}
-                    <div>
-                      <h4 className="mb-2 text-sm font-semibold text-foreground">
-                        Inspection Items
-                      </h4>
-                      <div className="space-y-1">
-                        {selectedSubmission.data.items &&
-                          Object.entries(selectedSubmission.data.items).map(
-                            ([item, status]) => (
-                              <div
-                                key={item}
-                                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
-                                  status === "def"
-                                    ? "bg-destructive/5"
-                                    : "bg-muted/50"
-                                }`}
-                              >
-                                <span className="text-foreground">{item}</span>
-                                <StatusBadge status={status as CheckStatus} />
-                              </div>
-                            )
-                          )}
-                      </div>
-                    </div>
-
-                    {/* Defect Details */}
-                    {selectedSubmission.data.defectDetails && (
-                      <>
-                        <Separator />
-                        <div>
-                          <h4 className="mb-2 text-sm font-semibold text-destructive">
-                            Defect Details
-                          </h4>
-                          <p className="rounded-md bg-destructive/5 p-3 text-sm text-foreground">
-                            {selectedSubmission.data.defectDetails}
-                          </p>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Signature */}
-                    <Separator />
-                    <div>
-                      <h4 className="mb-2 text-sm font-semibold text-foreground">
-                        Signature
-                      </h4>
-                      <p className="text-sm italic text-muted-foreground">
-                        {selectedSubmission.data.signature || "-"}
-                      </p>
+                      <pre className="rounded-md bg-muted p-3 text-xs overflow-auto">
+                        {JSON.stringify(selectedSubmission, null, 2)}
+                      </pre>
                     </div>
                   </div>
                 </ScrollArea>

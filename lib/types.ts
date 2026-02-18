@@ -89,6 +89,39 @@ export interface MechanicLDVFormData {
   signature: string
 }
 
+// ========== NEW CINTASIGN SHORTHAUL TYPES ==========
+export interface FleetEntry {
+  fleetNo: string;
+  operator: string;
+  shift: string;
+  compartment: string;
+  noOfLoads: string;
+  estTons: string;
+  hoursOpen: string;
+  hoursClose: string;
+  hoursWorked: string;
+  loadsPerHour: string;
+  tonsPerHour: string;
+}
+
+export interface BreakdownEntry {
+  machineId: string;
+  operator: string;
+  stop: string;
+  start: string;
+  details: string;
+}
+
+export interface CintasignShorthaulFormData {
+  date: string;
+  day: string;
+  farm: string;
+  automaticNumber: string;
+  fleetEntries: FleetEntry[];
+  breakdownEntries: BreakdownEntry[];
+}
+// ===================================================
+
 // Union type for all form data
 export type FormDataUnion = 
   | LightDeliveryFormData 
@@ -96,6 +129,7 @@ export type FormDataUnion =
   | ExcavatorHarvesterFormData
   | LowbedTrailerFormData      // ✅ ADDED
   | MechanicLDVFormData        // ✅ ADDED
+  | CintasignShorthaulFormData; // ✅ NEW
 
 // ============================================
 // FORM TYPE CONSTANTS
@@ -106,6 +140,7 @@ export type FormType =
   | "excavator-harvester"
   | "lowbed-trailer"          // ✅ ADDED
   | "mechanic-ldv"            // ✅ ADDED
+  | "cintasign-shorthaul";     // ✅ NEW
 
 // ============================================
 // SUBMISSION TYPE - WITH NOTIFICATION FIELDS
@@ -338,6 +373,10 @@ export const mechanicLDVItems = [
   "General cleanliness",
 ] as const
 
+// ========== NEW CINTASIGN SHORTHAUL ITEMS (empty, as no checklist) ==========
+export const cintasignShorthaulItems = [] as const
+// ===================================================
+
 // ============================================
 // TYPE HELPERS
 // ============================================
@@ -347,6 +386,7 @@ export type ExcavatorLoaderItem = typeof excavatorLoaderItems[number]
 export type ExcavatorHarvesterItem = typeof excavatorHarvesterItems[number]
 export type LowbedTrailerItem = typeof lowbedTrailerItems[number]      // ✅ ADDED
 export type MechanicLDVItem = typeof mechanicLDVItems[number]          // ✅ ADDED
+export type CintasignShorthaulItem = typeof cintasignShorthaulItems[number] // ✅ NEW
 
 // Map form type to its items type
 export type FormItemsMap = {
@@ -355,6 +395,7 @@ export type FormItemsMap = {
   'excavator-harvester': ExcavatorHarvesterItem
   'lowbed-trailer': LowbedTrailerItem        // ✅ ADDED
   'mechanic-ldv': MechanicLDVItem            // ✅ ADDED
+  'cintasign-shorthaul': CintasignShorthaulItem // ✅ NEW
 }
 
 // Map form type to its data type
@@ -364,6 +405,7 @@ export type FormDataMap = {
   'excavator-harvester': ExcavatorHarvesterFormData
   'lowbed-trailer': LowbedTrailerFormData    // ✅ ADDED
   'mechanic-ldv': MechanicLDVFormData        // ✅ ADDED
+  'cintasign-shorthaul': CintasignShorthaulFormData // ✅ NEW
 }
 
 // ============================================
@@ -408,6 +450,13 @@ export const formConfigs: Record<FormType, FormConfig> = {
     title: 'Mechanic LDV Daily Checklist',
     description: 'Complete the mechanic light delivery vehicle daily inspection checklist.',
     items: mechanicLDVItems
+  },
+  // ✅ NEW: Cintasign Shorthaul config
+  'cintasign-shorthaul': {
+    type: 'cintasign-shorthaul',
+    title: 'Cintasign Shorthaul Trip Sheet',
+    description: 'Daily log for shorthaul operations.',
+    items: cintasignShorthaulItems
   }
 }
 
@@ -439,6 +488,11 @@ export function isMechanicLDVFormData(data: FormDataUnion): data is MechanicLDVF
          (data as MechanicLDVFormData).odometerStart !== undefined
 }
 
+// ✅ NEW: Type guard for Cintasign Shorthaul
+export function isCintasignShorthaulFormData(data: FormDataUnion): data is CintasignShorthaulFormData {
+  return (data as CintasignShorthaulFormData).fleetEntries !== undefined
+}
+
 // Get form title from form type
 export function getFormTitle(type: FormType): string {
   return formConfigs[type].title
@@ -463,7 +517,8 @@ export function getFormTypeLabel(type: FormType): string {
     'excavator-loader': 'Excavator Loader',
     'excavator-harvester': 'Excavator Harvester',
     'lowbed-trailer': 'Lowbed & Roll Back Trailer',
-    'mechanic-ldv': 'Mechanic LDV'
+    'mechanic-ldv': 'Mechanic LDV',
+    'cintasign-shorthaul': 'Cintasign Shorthaul' // ✅ NEW
   }
   return labels[type]
 }
@@ -505,6 +560,16 @@ export function getInitialFormData(formType: FormType): Partial<FormDataUnion> {
         validTrainingCard: '',
         defectDetails: '',
         signature: ''
+      }
+    // ✅ NEW: Cintasign Shorthaul
+    case 'cintasign-shorthaul':
+      return {
+        date: new Date().toISOString().split('T')[0],
+        day: '',
+        farm: '',
+        automaticNumber: '',
+        fleetEntries: [],
+        breakdownEntries: []
       }
     default:
       return {}

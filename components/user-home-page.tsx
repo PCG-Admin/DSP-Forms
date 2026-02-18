@@ -225,6 +225,17 @@ const forms = [
     docRef: "HSEMS/8.1.9/REG/014",
     itemCount: 15,
   },
+  // NEW: Cintasign Shorthaul
+  {
+    id: "cintasign-shorthaul",
+    title: "Cintasign Shorthaul",
+    subtitle: "Trip Sheet",
+    description: "Daily log for shorthaul operations including fleet details and breakdown hours.",
+    icon: Truck,
+    href: "/cintasign/shorthaul",
+    docRef: "CINT/LOG/001",
+    itemCount: 0, // Not an inspection checklist
+  },
 ]
 
 export function UserHomePage() {
