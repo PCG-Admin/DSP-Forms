@@ -14,6 +14,7 @@ import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BrandLogo } from '@/components/brand-logo';
 
 // ============================================================================
 // INSPECTION ITEMS – as they appear in the Dezzi Timber Truck PDF
@@ -224,6 +225,7 @@ export function DezziTimberTruckForm() {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
+         credentials: "include", 
         body: JSON.stringify({
           formType: "dezzi-timber-truck",
           formTitle: "Dezzi Timber Truck Pre-Shift Checklist",
@@ -247,7 +249,9 @@ export function DezziTimberTruckForm() {
 
       <Card>
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3"><Image src="/images/ringomode-logo.png" alt="Ringomode DSP logo" width={160} height={50} className="object-contain" /></div>
+          <div className="mx-auto mb-3">
+            <BrandLogo width={160} height={50} />
+          </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Dezzi Timber Truck Pre-Shift Checklist</CardTitle>
           <CardDescription>Document Ref: HSEMS/8.1.19/REG/004 | Rev. 4 | 27.03.2020</CardDescription>

@@ -121,6 +121,7 @@ export interface Submission {
   // Notification tracking fields
   isRead?: boolean      // Whether admin has viewed this submission
   viewedAt?: string     // When admin viewed it
+  brand: 'ringomode' | 'cintasign';
 }
 
 // ============================================

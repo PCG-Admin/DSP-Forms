@@ -15,6 +15,7 @@ import { excavatorHarvesterItems, type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BrandLogo } from '@/components/brand-logo';
 
 // ─── FULL SECTIONS ARRAY – ALL 34 SECTIONS, COMPLETE ─────────────
 const sections = [
@@ -565,6 +566,7 @@ export function ExcavatorHarvesterForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+         credentials: "include", 
         body: JSON.stringify({
           formType: "excavator-harvester",
           formTitle: "Excavator Harvester Pre-Shift Inspection Checklist",
@@ -616,13 +618,7 @@ export function ExcavatorHarvesterForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <Image
-              src="/images/ringomode-logo.png"
-              alt="Ringomode DSP logo"
-              width={160}
-              height={50}
-              className="object-contain"
-            />
+            <BrandLogo width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">
             HSE Management System

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { toast } from 'sonner'; // optional, if you want better error display
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -30,11 +31,11 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.error || 'Login failed');
       } else {
-        // Redirect based on role
+        // ✅ Redirect based on role
         if (data.role === 'admin') {
           router.push('/admin');
         } else {
-          router.push('/');
+          router.push('/brand-select');
         }
       }
     } catch (err) {

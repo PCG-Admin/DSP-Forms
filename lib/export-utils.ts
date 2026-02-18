@@ -1,4 +1,6 @@
 import type { Submission, CheckStatus } from "@/lib/types"
+import { getBrand } from '@/lib/brand';
+import type { Brand } from '@/lib/brand';
 
 // ============================================================================
 // EXCAVATOR HARVESTER SECTIONS (34 sections)
@@ -1027,7 +1029,42 @@ function formatFieldKey(key: string): string {
 }
 
 // ============================================================================
-// CSV EXPORTS
+// BRAND‑AWARE LOGO LOADER
+// ============================================================================
+const brandLogoFile: Record<Brand, string> = {
+  ringomode: 'ringomode-logo.png',
+  cintasign: 'cintasign-logo.jpg', // .jpg for Cintasign
+};
+
+async function getBrandLogoBase64(brand: Brand): Promise<string> {
+  const filename = brandLogoFile[brand];
+  try {
+    if (typeof window === 'undefined') {
+      const fs = await import('fs');
+      const path = await import('path');
+      const logoPath = path.join(process.cwd(), 'public', 'images', filename);
+      const logoBuffer = fs.readFileSync(logoPath);
+      const mime = filename.endsWith('.png') ? 'png' : 'jpeg';
+      return `data:image/${mime};base64,${logoBuffer.toString('base64')}`;
+    } else {
+      const response = await fetch(`/images/${filename}`);
+      if (!response.ok) return '';
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+  } catch (error) {
+    console.error(`Failed to load image ${filename}:`, error);
+    return '';
+  }
+}
+
+// ============================================================================
+// CSV EXPORTS (updated to include brand name)
 // ============================================================================
 function escapeCSV(val: string): string {
   if (val.includes(",") || val.includes('"') || val.includes("\n")) {
@@ -1039,10 +1076,11 @@ function escapeCSV(val: string): string {
 export function exportSubmissionsToCSV(submissions: Submission[]): void {
   if (submissions.length === 0) return
   const rows: string[][] = []
-  rows.push(["ID", "Form Type", "Submitted By", "Date", "Status", "Defect Details", "Signature"])
+  rows.push(["ID", "Brand", "Form Type", "Submitted By", "Date", "Status", "Defect Details", "Signature"])
   for (const sub of submissions) {
     rows.push([
       sub.id,
+      sub.brand || 'ringomode',
       formTypeLabel(sub.formType),
       sub.submittedBy,
       new Date(sub.submittedAt).toLocaleDateString("en-ZA", {
@@ -1058,15 +1096,18 @@ export function exportSubmissionsToCSV(submissions: Submission[]): void {
     ])
   }
   const csv = rows.map((r) => r.map(escapeCSV).join(",")).join("\n")
-  downloadFile(csv, "ringomode-submissions.csv", "text/csv;charset=utf-8;")
+  downloadFile(csv, "submissions.csv", "text/csv;charset=utf-8;")
 }
 
 export function exportSingleSubmissionToCSV(sub: Submission): void {
+  const brand = sub.brand || 'ringomode';
+  const brandName = brand === 'cintasign' ? 'Cintasign' : 'Ringomode DSP';
   const rows: string[][] = []
-  rows.push(["Ringomode HSE Management System"])
+  rows.push([`${brandName} HSE Management System`])
   rows.push([formTypeLabel(sub.formType)])
   rows.push([])
   rows.push(["Field", "Value"])
+  rows.push(["Brand", brand])
   rows.push(["Submitted By", sub.submittedBy])
   rows.push([
     "Date",
@@ -1096,40 +1137,12 @@ export function exportSingleSubmissionToCSV(sub: Submission): void {
   }
   rows.push(["Signature", sub.data.signature || "-"])
   const csv = rows.map((r) => r.map(escapeCSV).join(",")).join("\n")
-  const filename = `ringomode-${sub.formType}-${sub.submittedBy.replace(/\s/g, "_")}-${sub.id.slice(0, 8)}.csv`
+  const filename = `${brand}-${sub.formType}-${sub.submittedBy.replace(/\s/g, "_")}-${sub.id.slice(0, 8)}.csv`
   downloadFile(csv, filename, "text/csv;charset=utf-8;")
 }
 
 // ============================================================================
-// LOGO LOADER
-// ============================================================================
-async function getLogoBase64(): Promise<string> {
-  try {
-    if (typeof window === 'undefined') {
-      const fs = await import('fs');
-      const path = await import('path');
-      const logoPath = path.join(process.cwd(), 'public', 'images', 'ringomode-logo.png');
-      const logoBuffer = fs.readFileSync(logoPath);
-      return `data:image/png;base64,${logoBuffer.toString('base64')}`;
-    } else {
-      const response = await fetch('/images/ringomode-logo.png');
-      if (!response.ok) return '';
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-  } catch (error) {
-    console.error('Failed to load logo:', error);
-    return '';
-  }
-}
-
-// ============================================================================
-// PDF EXPORT – PER‑ITEM ICONS FOR ALL FORMS (except grouped harvester)
+// PDF EXPORT – now using submission's brand
 // ============================================================================
 export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   const { default: jsPDF } = await import("jspdf")
@@ -1139,8 +1152,11 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   
-  // ----- LOGO -----
-  const logoBase64 = await getLogoBase64();
+  // ----- Use submission's brand -----
+  const brand = sub.brand || 'ringomode';
+  const brandName = brand === 'cintasign' ? 'Cintasign' : 'Ringomode DSP';
+  const logoBase64 = await getBrandLogoBase64(brand);
+
   let yOffset = 15;
   if (logoBase64) {
     try {
@@ -1152,10 +1168,10 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
     }
   }
 
-  // ----- Header -----
+  // ----- Header with dynamic brand name -----
   doc.setFontSize(10)
   doc.setTextColor(100)
-  doc.text("Ringomode DSP", 14, yOffset)
+  doc.text(brandName, 14, yOffset)
   doc.text("Excellence - Relevance - Significance", 14, yOffset + 5)
 
   doc.setFontSize(7)
@@ -1472,52 +1488,77 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
     y += lines.length * 5 + 10
   }
 
-  // ----- Signature -----
-  if (y > pageHeight - 40) {
+  // ----- Signature (professional green label) -----
+  if (y > pageHeight - 70) {
     doc.addPage()
     y = 20
   }
-  doc.setFontSize(10)
-  doc.setTextColor(60)
-  doc.text("Signature:", 14, y)
-  y += 8
 
+  // Draw a light gray box with border
+  const boxX = 14
+  const boxY = y - 5
+  const boxWidth = 100
+  const boxHeight = 30
+
+  doc.setFillColor(250, 250, 250) // almost white
+  doc.rect(boxX, boxY, boxWidth, boxHeight, 'F')
+  doc.setDrawColor(180, 180, 180)
+  doc.setLineWidth(0.5)
+  doc.rect(boxX, boxY, boxWidth, boxHeight, 'S')
+
+  // Green label above the box
+  doc.setFontSize(9)
+  doc.setTextColor(0, 128, 0) // green
+  doc.setFont('helvetica', 'bold')
+  doc.text("Signature", boxX, boxY - 4)
+  doc.setFont('helvetica', 'normal')
+
+  // Signature content (if image, keep original; if text, use green)
   const signature = sub.data.signature
   if (signature && typeof signature === 'string' && signature.startsWith('data:image')) {
     try {
-      doc.addImage(signature, 'PNG', 14, y - 3, 50, 15)
-      y += 20
+      // Image signature – fit inside box with padding
+      const imgSize = Math.min(boxHeight - 8, boxWidth - 8)
+      const imgX = boxX + (boxWidth - imgSize) / 2
+      const imgY = boxY + (boxHeight - imgSize) / 2
+      doc.addImage(signature, 'PNG', imgX, imgY, imgSize, imgSize)
     } catch (error) {
       console.error('Failed to add signature image, falling back to text', error)
       doc.setFontSize(9)
       doc.setFont("helvetica", "italic")
-      doc.text("[Signature image failed to load]", 14, y)
+      doc.setTextColor(0, 128, 0) // green
+      doc.text("[Signature image failed to load]", boxX + 5, boxY + boxHeight / 2 + 3)
       doc.setFont("helvetica", "normal")
-      y += 8
     }
   } else {
+    // Text signature – draw in green
     doc.setFontSize(9)
     doc.setFont("helvetica", "italic")
-    doc.text(signature as string || "-", 14, y)
+    doc.setTextColor(0, 128, 0) // green
+    const sigText = (signature as string) || "-"
+    doc.text(sigText, boxX + 5, boxY + boxHeight / 2 + 3)
     doc.setFont("helvetica", "normal")
-    y += 8
   }
 
-  // ----- Footer -----
+  // Reset text color for subsequent content
+  doc.setTextColor(60, 60, 60)
+
+  y += boxHeight + 15
+  // ----- Footer with dynamic brand name -----
   const pageCount: number = doc.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
     doc.setFontSize(7)
     doc.setTextColor(150)
     doc.text(
-      `Ringomode DSP - HSE Management System | Page ${i} of ${pageCount}`,
+      `${brandName} - HSE Management System | Page ${i} of ${pageCount}`,
       pageWidth / 2,
       doc.internal.pageSize.getHeight() - 8,
       { align: "center" }
     )
   }
 
-  const filename: string = `ringomode-${sub.formType}-${sub.submittedBy.replace(/\s/g, "_")}-${sub.id.slice(0, 8)}.pdf`
+  const filename: string = `${brand}-${sub.formType}-${sub.submittedBy.replace(/\s/g, "_")}-${sub.id.slice(0, 8)}.pdf`
   doc.save(filename)
 }
 

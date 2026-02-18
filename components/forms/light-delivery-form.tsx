@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import Cookies from 'js-cookie';
 import React, { useRef, useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -13,6 +14,7 @@ import { lightDeliveryItems, type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BrandLogo } from '@/components/brand-logo';
 
 // ============================================================================
 // EFFECTIVE ITEMS – remove "First aid kit" from the list
@@ -52,12 +54,11 @@ const itemIconMap: Record<string, string> = {
 
 // ============================================================================
 // SECTION DEFINITIONS – each section has a title, list of items, and optional groupIcon
-// (if groupIcon is provided, the section will render as a group with one icon in the middle)
 // ============================================================================
 interface Section {
   title: string
   items: string[]
-  groupIcon?: string // if present, use group layout; otherwise per‑item icons
+  groupIcon?: string
 }
 
 const sections: Section[] = [
@@ -131,7 +132,7 @@ const sections: Section[] = [
 ]
 
 // ============================================================================
-// PER‑ITEM ROW COMPONENT – now with visible columns (borders & background)
+// PER‑ITEM ROW COMPONENT
 // ============================================================================
 interface ItemRowProps {
   item: string
@@ -145,12 +146,9 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
 
   return (
     <div className="grid grid-cols-[1fr_auto_auto] items-center border-b border-gray-200 last:border-0">
-      {/* Label column */}
       <div className="py-3 pr-4 border-r border-gray-200">
         <span className="text-sm font-medium text-foreground">{item}</span>
       </div>
-
-      {/* Icon column with background */}
       <div className="py-3 px-4 border-r border-gray-200 bg-gray-50 flex justify-center w-[150px]">
         <Image
           src={iconSrc}
@@ -160,8 +158,6 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
           className="object-contain"
         />
       </div>
-
-      {/* Buttons column */}
       <div className="py-3 pl-4 flex items-center gap-2">
         <Button
           type="button"
@@ -196,7 +192,7 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
 }
 
 // ============================================================================
-// GROUP SECTION COMPONENT – renders items in two halves with icon in the middle
+// GROUP SECTION COMPONENT
 // ============================================================================
 interface GroupSectionProps {
   title: string
@@ -215,7 +211,6 @@ function GroupSection({ title, items, iconSrc, itemState, onItemChange }: GroupS
     <div className="space-y-4">
       <h4 className="text-sm font-semibold text-primary">{title}</h4>
       <div className="ml-4 space-y-2">
-        {/* First half */}
         {firstHalf.map(item => (
           <div key={item} className="flex items-center justify-between py-2 border-b border-gray-200">
             <span className="text-sm font-medium text-foreground">{item}</span>
@@ -251,7 +246,6 @@ function GroupSection({ title, items, iconSrc, itemState, onItemChange }: GroupS
           </div>
         ))}
 
-        {/* Icon in the middle */}
         <div className="flex justify-center py-4">
           <Image
             src={iconSrc}
@@ -262,7 +256,6 @@ function GroupSection({ title, items, iconSrc, itemState, onItemChange }: GroupS
           />
         </div>
 
-        {/* Second half */}
         {secondHalf.map(item => (
           <div key={item} className="flex items-center justify-between py-2 border-b border-gray-200">
             <span className="text-sm font-medium text-foreground">{item}</span>
@@ -306,7 +299,6 @@ export function LightDeliveryForm() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ---------- Driver Information ----------
   const [formData, setFormData] = useState({
     driverName: "",
     vehicleRegistration: "",
@@ -317,7 +309,6 @@ export function LightDeliveryForm() {
     odometerStop: "",
   })
 
-  // ---------- Auto‑generate Document Number ----------
   const documentNo = useMemo(() => {
     const date = new Date()
     const year = date.getFullYear().toString().slice(-2)
@@ -327,15 +318,12 @@ export function LightDeliveryForm() {
     return `LD-${year}${month}${day}-${random}`
   }, [])
 
-  // ---------- Inspection Items State (using effectiveItems) ----------
   const [items, setItems] = useState<Record<string, CheckStatus>>(
     Object.fromEntries(effectiveItems.map((item) => [item, null]))
   )
 
-  // ---------- Defect Details ----------
   const [defectDetails, setDefectDetails] = useState("")
 
-  // ---------- Signature Pad ----------
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
@@ -441,20 +429,18 @@ export function LightDeliveryForm() {
     setSignatureImage(null)
   }
 
-  // ---------- Computed Values ----------
   const hasDefects = useMemo(() => Object.values(items).some((s) => s === "def"), [items])
   const allItemsChecked = useMemo(() => Object.values(items).every((s) => s !== null), [items])
   const checkedCount = useMemo(() => Object.values(items).filter((s) => s !== null).length, [items])
 
-  // ---------- Item Change Handler ----------
   const handleItemChange = (label: string, value: CheckStatus) => {
     setItems((prev) => ({ ...prev, [label]: value }))
   }
 
-  // ---------- Submit Handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // --- Validation (unchanged) ---
     if (!formData.driverName || !formData.vehicleRegistration) {
       toast.error("Please fill in all required fields")
       return
@@ -475,17 +461,38 @@ export function LightDeliveryForm() {
       return
     }
 
+    // --- Brand handling ---
+    const brand = Cookies.get('brand') as 'ringomode' | 'cintasign' || 'ringomode';
+
+    // Optional: verify that the session brand matches the cookie brand
+    // (This requires an endpoint like /api/user that returns the current user's brand)
+    try {
+      const userRes = await fetch('/api/user');
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        if (userData.brand && userData.brand !== brand) {
+          toast.error(`You are logged into ${userData.brand} but trying to submit a form for ${brand}. Please log in with the correct account.`);
+          return;
+        }
+      }
+    } catch (error) {
+      // If the endpoint doesn't exist, just log and continue
+      console.warn("Could not verify session brand – assuming it's correct.", error);
+    }
+
     setIsSubmitting(true)
 
     try {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           formType: "light-delivery",
           formTitle: "Light Delivery Vehicle Daily Checklist",
           submittedBy: formData.driverName,
           hasDefects,
+          brand, // explicitly send the brand from cookie
           data: {
             ...formData,
             documentNo,
@@ -501,7 +508,8 @@ export function LightDeliveryForm() {
         toast.success("Checklist submitted successfully!")
         router.push("/")
       } else {
-        toast.error("Failed to submit checklist")
+        const errorText = await response.text();
+        toast.error(`Failed to submit checklist: ${errorText}`)
       }
     } catch {
       toast.error("An error occurred. Please try again.")
@@ -512,7 +520,7 @@ export function LightDeliveryForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 p-4 pb-12 lg:p-8 lg:pb-16">
-      {/* Back Button */}
+      {/* … the rest of your JSX remains exactly as before … */}
       <div className="flex items-center gap-3">
         <Button type="button" variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground">
           <Link href="/">
@@ -522,17 +530,10 @@ export function LightDeliveryForm() {
         </Button>
       </div>
 
-      {/* ===== HEADER ===== */}
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <Image
-              src="/images/ringomode-logo.png"
-              alt="Ringomode DSP logo"
-              width={160}
-              height={50}
-              className="object-contain"
-            />
+            <BrandLogo width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">
@@ -544,7 +545,6 @@ export function LightDeliveryForm() {
         </CardHeader>
       </Card>
 
-      {/* ===== GENERAL INSTRUCTIONS ===== */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
@@ -566,7 +566,6 @@ export function LightDeliveryForm() {
         </CardContent>
       </Card>
 
-      {/* ===== DRIVER INFORMATION ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base text-foreground">Driver Information</CardTitle>
@@ -585,7 +584,6 @@ export function LightDeliveryForm() {
             />
           </div>
 
-          {/* Auto-generated Document Number */}
           <div className="space-y-2">
             <Label htmlFor="documentNo" className="text-foreground">Document No.</Label>
             <Input
@@ -629,7 +627,6 @@ export function LightDeliveryForm() {
             />
           </div>
 
-          {/* ===== DRIVER'S LICENSE FIELD WITH ICON ===== */}
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <Image
@@ -675,7 +672,6 @@ export function LightDeliveryForm() {
         </CardContent>
       </Card>
 
-      {/* ===== QUICK REFERENCE ===== */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-6">
           <h3 className="mb-2 text-sm font-semibold text-foreground">Quick Reference:</h3>
@@ -687,7 +683,6 @@ export function LightDeliveryForm() {
         </CardContent>
       </Card>
 
-      {/* ===== PROGRESS ===== */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
           Progress: {checkedCount} / {effectiveItems.length} items checked
@@ -706,18 +701,15 @@ export function LightDeliveryForm() {
         />
       </div>
 
-      {/* ===== INSPECTION ITEMS – RENDER EACH SECTION APPROPRIATELY ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base text-foreground">Inspection Items</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {sections.map((section) => {
-            // Filter items that exist in state
             const sectionItems = section.items.filter(item => item in items)
             if (sectionItems.length === 0) return null
 
-            // If the section has a groupIcon, render as group section
             if (section.groupIcon) {
               return (
                 <GroupSection
@@ -731,7 +723,6 @@ export function LightDeliveryForm() {
               )
             }
 
-            // Otherwise render per‑item with icons from map
             return (
               <div key={section.title} className="space-y-4">
                 <h4 className="text-sm font-semibold text-primary">{section.title}</h4>
@@ -755,7 +746,6 @@ export function LightDeliveryForm() {
         </CardContent>
       </Card>
 
-      {/* ===== DEFECTS SECTION (always visible) ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -777,7 +767,6 @@ export function LightDeliveryForm() {
         </CardContent>
       </Card>
 
-      {/* ===== SIGNATURE PAD ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base text-foreground">Signature</CardTitle>
@@ -817,7 +806,6 @@ export function LightDeliveryForm() {
 
       <Separator />
 
-      {/* ===== SUBMIT BUTTONS ===== */}
       <div className="flex items-center justify-end gap-4">
         <Button type="button" variant="outline" asChild>
           <Link href="/">Cancel</Link>

@@ -20,6 +20,7 @@ import {
   ArrowRight, 
   ClipboardList
 } from "lucide-react"
+import { BrandLogo } from "@/components/brand-logo"
 
 const forms = [
   // Existing forms (16)
@@ -233,7 +234,7 @@ export function UserHomePage() {
         {/* Hero Section */}
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4">
-            <Image src="/images/ringomode-logo.png" alt="Ringomode DSP logo" width={180} height={60} className="object-contain" />
+            <BrandLogo width={180} height={60} />
           </div>
           <h1 className="text-balance text-2xl font-bold text-foreground lg:text-3xl">
             HSE Inspection Checklists
@@ -296,93 +297,11 @@ export function UserHomePage() {
 
         {/* Quick Stats Row */}
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-20">
-          {/* Existing badges (16) */}
-          <div className="rounded-lg bg-blue-50 p-3 text-center">
-            <p className="text-xs font-medium text-blue-700">Light Delivery</p>
-            <p className="text-lg font-bold text-blue-800">26</p>
-          </div>
-          <div className="rounded-lg bg-orange-50 p-3 text-center">
-            <p className="text-xs font-medium text-orange-700">Excavator Loader</p>
-            <p className="text-lg font-bold text-orange-800">33</p>
-          </div>
-          <div className="rounded-lg bg-green-50 p-3 text-center">
-            <p className="text-xs font-medium text-green-700">Excavator Harvester</p>
-            <p className="text-lg font-bold text-green-800">36</p>
-          </div>
-          <div className="rounded-lg bg-purple-50 p-3 text-center">
-            <p className="text-xs font-medium text-purple-700">Lowbed Trailer</p>
-            <p className="text-lg font-bold text-purple-800">29</p>
-          </div>
-          <div className="rounded-lg bg-red-50 p-3 text-center">
-            <p className="text-xs font-medium text-red-700">Mechanic LDV</p>
-            <p className="text-lg font-bold text-red-800">24</p>
-          </div>
-          <div className="rounded-lg bg-teal-50 p-3 text-center">
-            <p className="text-xs font-medium text-teal-700">Labour Carrier</p>
-            <p className="text-lg font-bold text-teal-800">20</p>
-          </div>
-          <div className="rounded-lg bg-indigo-50 p-3 text-center">
-            <p className="text-xs font-medium text-indigo-700">Ponsse Bison</p>
-            <p className="text-lg font-bold text-indigo-800">34</p>
-          </div>
-          <div className="rounded-lg bg-emerald-50 p-3 text-center">
-            <p className="text-xs font-medium text-emerald-700">Self Loading Forwarder</p>
-            <p className="text-lg font-bold text-emerald-800">32</p>
-          </div>
-          <div className="rounded-lg bg-amber-50 p-3 text-center">
-            <p className="text-xs font-medium text-amber-700">Skidder</p>
-            <p className="text-lg font-bold text-amber-800">28</p>
-          </div>
-          <div className="rounded-lg bg-rose-50 p-3 text-center">
-            <p className="text-xs font-medium text-rose-700">Timber Truck</p>
-            <p className="text-lg font-bold text-rose-800">24</p>
-          </div>
-          <div className="rounded-lg bg-cyan-50 p-3 text-center">
-            <p className="text-xs font-medium text-cyan-700">Trailer</p>
-            <p className="text-lg font-bold text-cyan-800">15</p>
-          </div>
-          <div className="rounded-lg bg-lime-50 p-3 text-center">
-            <p className="text-xs font-medium text-lime-700">Service Diesel</p>
-            <p className="text-lg font-bold text-lime-800">23</p>
-          </div>
-          <div className="rounded-lg bg-fuchsia-50 p-3 text-center">
-            <p className="text-xs font-medium text-fuchsia-700">Job Card</p>
-            <p className="text-lg font-bold text-fuchsia-800">—</p>
-          </div>
-          <div className="rounded-lg bg-sky-50 p-3 text-center">
-            <p className="text-xs font-medium text-sky-700">Water Cart</p>
-            <p className="text-lg font-bold text-sky-800">27</p>
-          </div>
-          <div className="rounded-lg bg-pink-50 p-3 text-center">
-            <p className="text-xs font-medium text-pink-700">Weekly Machinery</p>
-            <p className="text-lg font-bold text-pink-800">84</p>
-          </div>
-          <div className="rounded-lg bg-violet-50 p-3 text-center">
-            <p className="text-xs font-medium text-violet-700">Bell Timber</p>
-            <p className="text-lg font-bold text-violet-800">43</p>
-          </div>
-          {/* New badges (4) */}
-          <div className="rounded-lg bg-orange-100 p-3 text-center">
-            <p className="text-xs font-medium text-orange-800">Daily Attachment</p>
-            <p className="text-lg font-bold text-orange-900">39</p>
-          </div>
-          <div className="rounded-lg bg-yellow-100 p-3 text-center">
-            <p className="text-xs font-medium text-yellow-800">Daily Machine</p>
-            <p className="text-lg font-bold text-yellow-900">84</p>
-          </div>
-          <div className="rounded-lg bg-stone-100 p-3 text-center">
-            <p className="text-xs font-medium text-stone-800">Dezzi Timber</p>
-            <p className="text-lg font-bold text-stone-900">41</p>
-          </div>
-          <div className="rounded-lg bg-slate-100 p-3 text-center">
-            <p className="text-xs font-medium text-slate-800">Diesel Cart</p>
-            <p className="text-lg font-bold text-slate-900">15</p>
-          </div>
-        </div>
+         </div>
 
         {/* Footer */}
         <footer className="mt-12 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          <p>Ringomode HSE Management System</p>
+          <p>HSE Management System</p>
           <p className="mt-1">All inspections are logged and reviewed by the HSE Manager.</p>
           <p className="mt-2 text-[10px]">Document Control: HSEMS/8.1.19/REG | Rev. 2 | 27.03.2024</p>
         </footer>

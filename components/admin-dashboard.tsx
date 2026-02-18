@@ -41,7 +41,6 @@ import {
   Calendar,
   User,
   FileText,
-  Download,
   FileDown,
   FileSpreadsheet,
   MoreHorizontal,
@@ -55,7 +54,7 @@ import {
   Combine,
   Logs,
   Fuel,
-    Tractor,
+  Tractor,
   Droplets,
   ClipboardCheck,
 } from "lucide-react"
@@ -82,7 +81,18 @@ function StatusBadge({ status }: { status: CheckStatus }) {
   return <Badge className={config.className}>{config.label}</Badge>
 }
 
-// ✅ UPDATED: Added all new form types
+// Brand badge helper
+function BrandBadge({ brand }: { brand?: string }) {
+  const displayBrand = brand || 'ringomode'; // fallback for old submissions
+  const isCintasign = displayBrand === 'cintasign';
+  return (
+    <Badge variant="outline" className={isCintasign ? "border-blue-500 text-blue-700" : "border-gray-500 text-gray-700"}>
+      {displayBrand}
+    </Badge>
+  );
+}
+
+// Form type label (unchanged)
 function formTypeLabel(type: string) {
   switch (type) {
     case "light-delivery":
@@ -130,7 +140,7 @@ function formTypeLabel(type: string) {
   }
 }
 
-// ✅ ADDED: Form icon mapping with all icons
+// Form icon mapping (unchanged)
 function getFormIcon(type: string) {
   switch (type) {
     case "light-delivery":
@@ -185,16 +195,22 @@ function formatFieldKey(key: string): string {
     .trim()
 }
 
-// Preview Component
+// Preview Component – now with dynamic brand logo
 function SubmissionPreview({ submission }: { submission: Submission }) {
+  // Determine which logo to show based on brand
+  const logoPath = submission.brand === 'cintasign' 
+    ? '/images/cintasign-logo.jpg' 
+    : '/images/ringomode-logo.png';
+  const logoAlt = submission.brand === 'cintasign' ? 'Cintasign Logo' : 'Ringomode DSP Logo';
+
   return (
     <div className="space-y-6 print:space-y-4" id="submission-preview">
-      {/* Print Header */}
+      {/* Print Header with dynamic logo */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <Image
-            src="/images/ringomode-logo.png"
-            alt="Ringomode DSP logo"
+            src={logoPath}
+            alt={logoAlt}
             width={140}
             height={45}
             className="object-contain"
@@ -319,21 +335,21 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
   )
 }
 
-// Main Dashboard – accepts initialSubmissions prop
+// Main Dashboard
 interface AdminDashboardProps {
   initialSubmissions?: Submission[];
 }
 
 export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps) {
   const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions)
-  const [loading, setLoading] = useState(false) // start false if we have initial data? but we'll still fetch on mount for updates
+  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [defectFilter, setDefectFilter] = useState<string>("all")
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [dialogTab, setDialogTab] = useState<string>("preview")
 
-  // ✅ ADDED: Notification states
+  // Notification states
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState<any[]>([])
 
@@ -354,7 +370,6 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
     }
   }, [])
 
-  // ✅ ADDED: Fetch notifications
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await fetch("/api/notifications")
@@ -366,7 +381,6 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
     }
   }, [])
 
-  // ✅ ADDED: Mark as read function
   const markAsRead = async (submissionId: string) => {
     try {
       await fetch("/api/notifications", {
@@ -394,7 +408,6 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
     fetchSubmissions()
     fetchNotifications()
     
-    // Poll for new notifications every 10 seconds
     const interval = setInterval(() => {
       fetchNotifications()
       fetchSubmissions()
@@ -451,25 +464,16 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
 
   return (
     <div className="space-y-6 p-4 lg:p-8">
-      {/* Header with Notification Bell */}
+      {/* Header – removed logo, kept title and notifications */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/images/ringomode-logo.png"
-            alt="Ringomode DSP logo"
-            width={140}
-            height={48}
-            className="object-contain"
-          />
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">
-              Review and manage HSE inspection submissions
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Review and manage HSE inspection submissions
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* ✅ ADDED: Notification Bell */}
+          {/* Notification Bell */}
           <div className="relative">
             <Button
               variant="outline"
@@ -526,7 +530,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards (unchanged) */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 pt-6">
@@ -663,6 +667,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                   <TableRow className="bg-muted/50">
                     <TableHead className="text-foreground">Submitted By</TableHead>
                     <TableHead className="text-foreground">Form Type</TableHead>
+                    <TableHead className="text-foreground">Brand</TableHead> {/* NEW COLUMN */}
                     <TableHead className="text-foreground">Date</TableHead>
                     <TableHead className="text-foreground">Status</TableHead>
                     <TableHead className="text-right text-foreground">Actions</TableHead>
@@ -682,12 +687,14 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {/* ✅ UPDATED: Dynamic icon based on form type */}
                           {getFormIcon(sub.formType)}
                           <span className="text-foreground">
                             {formTypeLabel(sub.formType)}
                           </span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <BrandBadge brand={sub.brand} />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(sub.submittedAt).toLocaleDateString("en-ZA", {
@@ -717,7 +724,6 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                             onClick={() => {
                               setSelectedSubmission(sub)
                               setDialogTab("preview")
-                              // Auto-mark as read when viewing
                               if (!sub.isRead) {
                                 markAsRead(sub.id)
                               }
@@ -728,7 +734,6 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                             <span className="hidden sm:inline">View</span>
                           </Button>
                           
-                          {/* ✅ ADDED: Mark as read button for unread submissions */}
                           {!sub.isRead && (
                             <Button
                               variant="ghost"

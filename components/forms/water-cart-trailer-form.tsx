@@ -13,6 +13,7 @@ import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BrandLogo } from "@/components/brand-logo"
 
 const ALL_INSPECTION_ITEMS: string[] = [
   "License and Phepha",
@@ -48,13 +49,13 @@ const itemIconMap: Record<string, string> = {
   "License and Phepha": "license2.png",
   "Number Plate": "license2.png",
   "Trailer Body": "cabs.png",
-  "Water Tank": "cabs.png",          // fallback
+  "Water Tank": "cabs.png",
   "Hose Pipe & Nozzle": "hydraulic-hoses.png",
   "Chevron, Reflectors and Tape": "led.png",
   "Working Lights": "led.png",
   "Trailer Plug & Electric Wiring": "wiring.png",
   "U-Bolts": "wheel-nut.png",
-  "Straps & Ratchets": "tie-down.png", // fallback
+  "Straps & Ratchets": "tie-down.png",
   "Safety Chain": "tow-hitch.png",
   "Tyres": "types-spares.png",
   "Wheel Rims": "wheel-nut.png",
@@ -184,6 +185,7 @@ export function WaterCartTrailerForm() {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
+         credentials: "include", 
         body: JSON.stringify({
           formType: "water-cart-trailer",
           formTitle: "Water Cart Trailer & Pressure Washer Checklist",
@@ -207,7 +209,9 @@ export function WaterCartTrailerForm() {
 
       <Card>
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3"><Image src="/images/ringomode-logo.png" alt="Ringomode DSP logo" width={160} height={50} className="object-contain" /></div>
+          <div className="mx-auto mb-3">
+            <BrandLogo width={160} height={50} />
+          </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Water Cart Trailer & Pressure Washer Checklist</CardTitle>
           <CardDescription>Document Ref: HSEMS/8.1.19/REG/015 | Rev. 2 | 23.03.2020</CardDescription>

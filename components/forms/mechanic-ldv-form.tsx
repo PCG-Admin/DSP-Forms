@@ -13,6 +13,7 @@ import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BrandLogo } from "@/components/brand-logo"
 
 // ============================================================================
 // INSPECTION ITEMS – exactly as they appear in the Mechanic LDV PDF
@@ -160,7 +161,7 @@ export function MechanicLDVForm() {
     Object.fromEntries(ALL_INSPECTION_ITEMS.map((item) => [item, null]))
   )
 
-  // ---------- Defect Details (always visible, as in PDF) ----------
+  // ---------- Defect Details (always visible) ----------
   const [defectDetails, setDefectDetails] = useState("")
 
   // ---------- Signature Pad ----------
@@ -296,6 +297,7 @@ export function MechanicLDVForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+         credentials: "include", 
         body: JSON.stringify({
           formType: "mechanic-ldv",
           formTitle: "Mechanic LDV Daily Checklist",
@@ -341,13 +343,7 @@ export function MechanicLDVForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <Image
-              src="/images/ringomode-logo.png"
-              alt="Ringomode DSP logo"
-              width={160}
-              height={50}
-              className="object-contain"
-            />
+            <BrandLogo width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">
@@ -359,7 +355,7 @@ export function MechanicLDVForm() {
         </CardHeader>
       </Card>
 
-      {/* ===== GENERAL INSTRUCTIONS (now directly under the logo/header) ===== */}
+      {/* ===== GENERAL INSTRUCTIONS ===== */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
@@ -524,7 +520,7 @@ export function MechanicLDVForm() {
         </CardContent>
       </Card>
 
-      {/* ===== DEFECTS SECTION (always visible, as in PDF) ===== */}
+      {/* ===== DEFECTS SECTION (always visible) ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

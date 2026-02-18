@@ -13,6 +13,7 @@ import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BrandLogo } from "@/components/brand-logo"
 
 // ============================================================================
 // INSPECTION ITEMS – exactly as they appear in the PDF (headings only)
@@ -156,7 +157,7 @@ export function LowbedTrailerForm() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ---------- Driver Information (labels exactly as in PDF) ----------
+  // ---------- Driver Information ----------
   const [formData, setFormData] = useState({
     driverName: "",
     truckRegistration: "",
@@ -324,6 +325,7 @@ export function LowbedTrailerForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+         credentials: "include", 
         body: JSON.stringify({
           formType: "lowbed-trailer",
           formTitle: "Lowbed And Roll Back Trailer Pre-Shift Use Inspection Checklist",
@@ -369,13 +371,7 @@ export function LowbedTrailerForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <Image
-              src="/images/ringomode-logo.png"
-              alt="Ringomode DSP logo"
-              width={160}
-              height={50}
-              className="object-contain"
-            />
+            <BrandLogo width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">
@@ -387,7 +383,7 @@ export function LowbedTrailerForm() {
         </CardHeader>
       </Card>
 
-      {/* ===== GENERAL INSTRUCTIONS (updated) ===== */}
+      {/* ===== GENERAL INSTRUCTIONS ===== */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
@@ -562,30 +558,27 @@ export function LowbedTrailerForm() {
         </CardContent>
       </Card>
 
-      {/* ===== DEFECTS SECTION ===== */}
-      {hasDefects && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Defects Detected
-            </CardTitle>
-            <CardDescription>
-              Please provide details for all defects identified above.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              value={defectDetails}
-              onChange={(e) => setDefectDetails(e.target.value)}
-              placeholder="Describe the defects in detail..."
-              rows={4}
-              className="resize-none"
-              required={hasDefects}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* ===== DEFECTS SECTION (always visible) ===== */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            Are There Any Defects Selected
+          </CardTitle>
+          <CardDescription>
+            If "Def" is selected, please specify defects here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={defectDetails}
+            onChange={(e) => setDefectDetails(e.target.value)}
+            placeholder="Details of defect ..."
+            rows={4}
+            className="resize-none"
+          />
+        </CardContent>
+      </Card>
 
       {/* ===== SIGNATURE PAD ===== */}
       <Card>
