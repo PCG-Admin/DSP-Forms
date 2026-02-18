@@ -20,9 +20,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Get brand from cookie
-    const cookieStore = cookies();
-    const brand = cookieStore.get('brand')?.value as 'ringomode' | 'cintasign' || 'ringomode';
+    // Get brand from request body first, then from cookie, then default to 'ringomode'
+    const cookieStore = await cookies(); // await because cookies() is async in Next.js 15
+    const brandCookie = cookieStore.get('brand')?.value;
+    
+    // Prioritize body.brand over cookie, fallback to 'ringomode'
+    const brand = body.brand || brandCookie || 'ringomode';
 
     // Validate required fields
     if (!body.formType || !body.formTitle || !body.submittedBy) {
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
       submittedAt: new Date().toISOString(),
       data: body.data || {},
       hasDefects: body.hasDefects || false,
-      brand, // store the brand
+      brand, // store the correct brand
     };
 
     await addSubmission(submission);

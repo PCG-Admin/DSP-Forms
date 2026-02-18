@@ -57,6 +57,7 @@ import {
   Tractor,
   Droplets,
   ClipboardCheck,
+  Trash2, // ✅ Added for delete
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -525,6 +526,30 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
     }
   }
 
+  // ✅ Delete function
+  const handleDelete = async (submissionId: string) => {
+    // Confirm deletion
+    if (!window.confirm("Are you sure you want to delete this submission? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete");
+      }
+
+      // Remove from local state
+      setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+      toast.success("Submission deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete submission");
+    }
+  };
+
   useEffect(() => {
     fetchSubmissions()
     fetchNotifications()
@@ -894,6 +919,15 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                               <DropdownMenuItem onClick={() => handleSingleCSV(sub)}>
                                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                                 Download CSV
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {/* ✅ Delete button */}
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(sub.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
