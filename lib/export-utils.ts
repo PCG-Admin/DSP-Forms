@@ -971,7 +971,7 @@ function formTypeLabel(type: string): string {
     case "bell-timber-truck":
       return "Bell Timber Truck Pre-Shift Checklist"
     case "vehicle-job-card":
-      return "Motorised Equipment/Vehicle Job Card"
+      return "Motorised Equipment / Vehicle Job Card"
     case "daily-attachment-checklist":
       return "Daily Attachment Checklist"
     case "daily-machine-checklist":
@@ -1148,7 +1148,6 @@ export function exportSingleSubmissionToCSV(sub: Submission): void {
   rows.push([])
   rows.push(["Inspection Item", "Status"])
   if (hasItems(sub.data)) {
-    // Narrowed type: sub.data is now WithItems
     for (const [item, status] of Object.entries(sub.data.items)) {
       rows.push([item, statusLabel(status as CheckStatus)])
     }
@@ -1166,7 +1165,7 @@ export function exportSingleSubmissionToCSV(sub: Submission): void {
 }
 
 // ============================================================================
-// PDF EXPORT – now with type guards and proper narrowing
+// PDF EXPORT – now with a clean vehicle‑job‑card branch matching the provided template
 // ============================================================================
 export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   const { default: jsPDF } = await import("jspdf")
@@ -1223,7 +1222,7 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   )
   doc.setFont('helvetica', 'normal')
 
-  // ----- Status Badge -----
+  // ----- Status Badge (not used for job card, but keep for consistency) -----
   doc.setFontSize(9)
   if (sub.hasDefects) {
     doc.setTextColor(220, 50, 50)
@@ -1233,52 +1232,68 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
     doc.text("CLEAN", pageWidth - 14, yOffset + 18, { align: "right" })
   }
 
-  // ----- Form Fields Table -----
-  const fieldRows: string[][] = []
-  fieldRows.push(["Submitted By", sub.submittedBy])
-  const formattedDate = new Date(sub.submittedAt).toLocaleDateString("en-ZA", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-  fieldRows.push(["Date", formattedDate])
-  for (const [key, value] of Object.entries(sub.data)) {
-    if (
-      key === "items" ||
-      key === "hasDefects" ||
-      key === "defectDetails" ||
-      key === "signature" ||
-      key === "date"
-    ) continue
-    fieldRows.push([formatFieldKey(key), String(value) || "-"])
-  }
-
-  if (fieldRows.length > 0) {
-    ;(doc as any).autoTable({
-      startY: yOffset + 33,
-      head: [["Information", ""]],
-      body: fieldRows,
-      theme: "grid",
-      headStyles: {
-        fillColor: [34, 100, 54],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-        fontSize: 8,
-      },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 14, right: 14 },
-      tableWidth: "auto",
+  // ==========================================================================
+  // CONDITIONALLY SKIP COMMON FIELDS TABLE FOR VEHICLE JOB CARD
+  // ==========================================================================
+  let y: number;
+  if (sub.formType !== "vehicle-job-card") {
+    // ----- Common fields table (submittedBy, date, and basic fields) -----
+    const fieldRows: string[][] = []
+    fieldRows.push(["Submitted By", sub.submittedBy])
+    const formattedDate = new Date(sub.submittedAt).toLocaleDateString("en-ZA", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     })
+    fieldRows.push(["Date", formattedDate])
+
+    // Add all other top-level fields (excluding arrays and totals)
+    for (const [key, value] of Object.entries(sub.data)) {
+      if (
+        key === "items" ||
+        key === "hasDefects" ||
+        key === "defectDetails" ||
+        key === "signature" ||
+        key === "date" ||
+        key === "parts" ||
+        key === "labour" ||
+        key === "partsTotal" ||
+        key === "labourTotal" ||
+        key === "grandTotal"
+      ) continue
+      fieldRows.push([formatFieldKey(key), String(value) || "-"])
+    }
+
+    if (fieldRows.length > 0) {
+      ;(doc as any).autoTable({
+        startY: yOffset + 33,
+        head: [["Information", ""]],
+        body: fieldRows,
+        theme: "grid",
+        headStyles: {
+          fillColor: [34, 100, 54],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8,
+        },
+        bodyStyles: { fontSize: 8 },
+        margin: { left: 14, right: 14 },
+        tableWidth: "auto",
+      })
+    }
+    y = (doc as any).lastAutoTable?.finalY ?? yOffset + 33
+    y += 10
+  } else {
+    // For vehicle-job-card we start directly after the header
+    y = yOffset + 33
   }
 
   // ==========================================================================
   // INSPECTION / DATA SECTIONS – HANDLE BY FORM TYPE
   // ==========================================================================
-  let y = (doc as any).lastAutoTable?.finalY ?? yOffset + 33
-  y += 10
-
+  
   // Preload icons helper (used only by forms that have icons)
   const preloadIcons = async (filenames: string[]): Promise<Map<string, string>> => {
     const map = new Map<string, string>();
@@ -1410,6 +1425,75 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
         y = (doc as any).lastAutoTable.finalY + 15;
       }
     }
+
+    // ----- Defect Details for excavator-harvester -----
+    if (hasDefectDetails(sub.data) && sub.data.defectDetails) {
+      y += 5;
+      if (y > pageHeight - 50) {
+        doc.addPage()
+        y = 20
+      }
+      doc.setFontSize(10)
+      doc.setTextColor(220, 50, 50)
+      doc.text("Defect Details:", 14, y)
+      y += 7
+      doc.setFontSize(8)
+      doc.setTextColor(60)
+      const lines: string[] = doc.splitTextToSize(sub.data.defectDetails, pageWidth - 28)
+      doc.text(lines, 14, y)
+      y += lines.length * 5 + 10
+    }
+
+    // ----- Signature for excavator-harvester -----
+    if (hasSignature(sub.data) && sub.data.signature) {
+      if (y > pageHeight - 70) {
+        doc.addPage()
+        y = 20
+      }
+
+      const boxX = 14
+      const boxY = y - 5
+      const boxWidth = 100
+      const boxHeight = 30
+
+      doc.setFillColor(250, 250, 250)
+      doc.rect(boxX, boxY, boxWidth, boxHeight, 'F')
+      doc.setDrawColor(180, 180, 180)
+      doc.setLineWidth(0.5)
+      doc.rect(boxX, boxY, boxWidth, boxHeight, 'S')
+
+      doc.setFontSize(9)
+      doc.setTextColor(0, 128, 0)
+      doc.setFont('helvetica', 'bold')
+      doc.text("Signature", boxX, boxY - 4)
+      doc.setFont('helvetica', 'normal')
+
+      const signature = sub.data.signature
+      if (signature && typeof signature === 'string' && signature.startsWith('data:image')) {
+        try {
+          const imgSize = Math.min(boxHeight - 8, boxWidth - 8)
+          const imgX = boxX + (boxWidth - imgSize) / 2
+          const imgY = boxY + (boxHeight - imgSize) / 2
+          doc.addImage(signature, 'PNG', imgX, imgY, imgSize, imgSize)
+        } catch (error) {
+          console.error('Failed to add signature image, falling back to text', error)
+          doc.setFontSize(9)
+          doc.setFont("helvetica", "italic")
+          doc.setTextColor(0, 128, 0)
+          doc.text("[Signature image failed to load]", boxX + 5, boxY + boxHeight / 2 + 3)
+          doc.setFont("helvetica", "normal")
+        }
+      } else {
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "italic")
+        doc.setTextColor(0, 128, 0)
+        const sigText = signature || "-"
+        doc.text(sigText, boxX + 5, boxY + boxHeight / 2 + 3)
+        doc.setFont("helvetica", "normal")
+      }
+      y += boxHeight + 15
+    }
+
   } else if (sub.formType === "cintasign-shorthaul") {
     // ----- CINTASIGN SHORTHAUL: render fleet and breakdown tables -----
     const data = sub.data as any; // safe because we've checked formType
@@ -1489,33 +1573,214 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
     }
 
     // Skip the remaining sections (defects, signature) for this form type
+  } else if (sub.formType === "vehicle-job-card") {
+    // ----- VEHICLE JOB CARD: professional layout matching the provided PDF -----
+    const data = sub.data as any;
+
+    // Extract fields with sensible defaults (match web form field names)
+    const driverName = data.driverName || data.driversName || '';
+    const jobCardNumber = data.jobCardNumber || data.documentNo || '';  // fallback to documentNo
+    const machineVehicle = data.machineVehicle || data.machine || data.vehicle || '';
+    const registrationNumber = data.machineRegNumber || data.registrationNumber || data.regNo || '';
+    const hourMeterKM = data.hourMeterKmReading || data.hourMeterKM || data.hourMeter || data.kmReading || '';
+    const date = data.date ? new Date(data.date).toLocaleDateString('en-ZA') : '';
+    const categoryOfWork = data.categoryOfWork || '';
+
+    const descriptionOfWork = data.descriptionOfWork || data.workPerformed || '';
+    const testPerformed = data.testPerformedAndResult || data.testPerformed || '';
+    const jobCompletedSafe = data.jobCompletedAndSafe || '';
+
+    const mechanicsName = data.mechanicsName || '';
+    const operatorsName = data.operatorsName || data.operatorName || '';
+    const mechanicsSignature = data.mechanicSignature || data.signature || '';  // from web form
+    const operatorsSignature = data.operatorSignature || '';
+
+    // ------------------------------------------------------------------------
+    // Table 1: Basic job information (2 columns)
+    // ------------------------------------------------------------------------
+    if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+    (doc as any).autoTable({
+      startY: y,
+      head: [['Job Information', '']],
+      body: [
+        ['Drivers name:', driverName],
+        ['Job card number:', jobCardNumber],
+        ['Machine / vehicle:', machineVehicle],
+        ['Machine / registration number:', registrationNumber],
+        ['Hour meter / KM reading:', hourMeterKM],
+        ['Date:', date],
+        ['Category of work:', categoryOfWork],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 9, halign: 'left' },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 'auto' } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 5;
+
+    // ------------------------------------------------------------------------
+    // Table 2: Work performed (3 columns)
+    // ------------------------------------------------------------------------
+    if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+    (doc as any).autoTable({
+      startY: y,
+      head: [['Work Performed', '', '']],
+      body: [[
+        `Description:\n${descriptionOfWork}`,
+        `Test performed and result:\n${testPerformed}`,
+        `Job completed and safe to use:\n${jobCompletedSafe}`
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 9, halign: 'left' },
+      styles: { fontSize: 8, cellPadding: 4, minCellHeight: 20 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 'auto' } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 5;
+
+    // ------------------------------------------------------------------------
+    // Table 3: Mechanic and operator names & signatures (4 columns)
+    // ------------------------------------------------------------------------
+    if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+    (doc as any).autoTable({
+      startY: y,
+      head: [['Mechanic', '', 'Operator', '']],
+      body: [
+        ['Name:', mechanicsName, 'Name:', operatorsName],
+        ['Signature:', '', 'Signature:', ''] // placeholders, images drawn via didDrawCell
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 9, halign: 'left' },
+      styles: { fontSize: 8, cellPadding: 4, minCellHeight: 20 },
+      columnStyles: {
+        0: { cellWidth: 30, fontStyle: 'bold' },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 30, fontStyle: 'bold' },
+        3: { cellWidth: 60 }
+      },
+      margin: { left: 14, right: 14 },
+      didDrawCell: (cellData: any) => {
+        // Draw mechanic signature in row 1, column 1 (index 1)
+        if (cellData.section === 'body' && cellData.row.index === 1 && cellData.column.index === 1) {
+          if (mechanicsSignature && mechanicsSignature.startsWith('data:image')) {
+            try {
+              const imgSize = Math.min(cellData.cell.height - 4, cellData.cell.width - 4, 25);
+              const x = cellData.cell.x + (cellData.cell.width - imgSize) / 2;
+              const y = cellData.cell.y + (cellData.cell.height - imgSize) / 2;
+              doc.addImage(mechanicsSignature, 'PNG', x, y, imgSize, imgSize);
+            } catch (e) { console.error('Failed to draw mechanic signature', e); }
+          } else if (mechanicsSignature) {
+            doc.setFontSize(7);
+            doc.setTextColor(0,128,0);
+            doc.text(mechanicsSignature, cellData.cell.x + 2, cellData.cell.y + cellData.cell.height/2);
+          }
+        }
+        // Draw operator signature in row 1, column 3 (index 3)
+        if (cellData.section === 'body' && cellData.row.index === 1 && cellData.column.index === 3) {
+          if (operatorsSignature && operatorsSignature.startsWith('data:image')) {
+            try {
+              const imgSize = Math.min(cellData.cell.height - 4, cellData.cell.width - 4, 25);
+              const x = cellData.cell.x + (cellData.cell.width - imgSize) / 2;
+              const y = cellData.cell.y + (cellData.cell.height - imgSize) / 2;
+              doc.addImage(operatorsSignature, 'PNG', x, y, imgSize, imgSize);
+            } catch (e) { console.error('Failed to draw operator signature', e); }
+          } else if (operatorsSignature) {
+            doc.setFontSize(7);
+            doc.setTextColor(0,128,0);
+            doc.text(operatorsSignature, cellData.cell.x + 2, cellData.cell.y + cellData.cell.height/2);
+          }
+        }
+      }
+    });
+    y = (doc as any).lastAutoTable.finalY + 5;
+
+    // ----- Footer text (uncontrolled copy warning) -----
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text(
+      "Printed copies are for reference only and are not controlled. It is the responsibility of users of this document to ensure that they are using the recent version.",
+      14, pageHeight - 20, { align: 'left', maxWidth: pageWidth - 28 }
+    );
+
   } else {
-    // ----- ALL OTHER FORMS: PER‑ITEM ICON TABLE -----
+    // ----- ALL OTHER FORMS: either with icons (3 columns) or without (2 columns) -----
     const iconMapForForm = getIconMapForForm(sub.formType);
+    const hasIcons = iconMapForForm !== null;
+
     if (!hasItems(sub.data)) {
       console.warn("No inspection items found");
     } else {
       const data = sub.data; // now narrowed to WithItems
       const items = Object.keys(data.items).sort();
       
-      // Collect all icon filenames needed
-      const iconFilenames = items
-        .map(item => iconMapForForm?.[item])
-        .filter(f => f) as string[];
-      
-      const iconBase64Map = await preloadIcons(iconFilenames);
+      // Preload icons only if needed
+      let iconBase64Map: Map<string, string> = new Map();
+      if (hasIcons) {
+        const iconFilenames = items
+          .map(item => iconMapForForm?.[item])
+          .filter(f => f) as string[];
+        iconBase64Map = await preloadIcons(iconFilenames);
+      }
 
-      // ✅ FIXED: Use narrowed 'data' instead of 'sub.data'
-      const tableRows: any[] = items.map(item => [
-        item,
-        '',
-        statusLabel(data.items[item] as CheckStatus)
-      ]);
+      // Prepare table configuration
+      let head: string[][];
+      let body: any[][];
+      let columnStyles: any;
+      let didDrawCell: ((cellData: any) => void) | undefined;
+
+      if (hasIcons) {
+        // Three columns: item, (icon column), status
+        head = [['Inspection Item', '', 'Status']];
+        body = items.map(item => [
+          item,
+          '',
+          statusLabel(data.items[item] as CheckStatus)
+        ]);
+        columnStyles = {
+          0: { cellWidth: 110, fontStyle: 'bold' },
+          1: { cellWidth: 30, halign: 'center' },
+          2: { cellWidth: 30, halign: 'center' }
+        };
+        didDrawCell = (cellData: any): void => {
+          if (cellData.section === 'body' && cellData.column.index === 1) {
+            const item = cellData.row.raw[0] as string;
+            const iconFile = iconMapForForm?.[item];
+            if (!iconFile) return;
+            const base64 = iconBase64Map.get(iconFile);
+            if (!base64) return;
+
+            try {
+              const cellWidth = cellData.cell.width;
+              const cellHeight = cellData.cell.height;
+              const maxImgSize = Math.min(cellWidth, cellHeight) - 4;
+              const imgSize = Math.min(25, maxImgSize);
+              const x = cellData.cell.x + (cellWidth - imgSize) / 2;
+              const y = cellData.cell.y + (cellHeight - imgSize) / 2;
+              doc.addImage(base64, 'PNG', x, y, imgSize, imgSize);
+            } catch (e) {
+              console.error(`Failed to draw icon for ${item}`, e);
+            }
+          }
+        };
+      } else {
+        // Two columns: item, status (no icon column)
+        head = [['Inspection Item', 'Status']];
+        body = items.map(item => [
+          item,
+          statusLabel(data.items[item] as CheckStatus)
+        ]);
+        columnStyles = {
+          0: { cellWidth: 140, fontStyle: 'bold' },
+          1: { cellWidth: 30, halign: 'center' }
+        };
+        didDrawCell = undefined; // no icons to draw
+      }
 
       (doc as any).autoTable({
         startY: y,
-        head: [['Inspection Item', '', 'Status']],
-        body: tableRows,
+        head: head,
+        body: body,
         theme: 'grid',
         headStyles: {
           fillColor: [34, 100, 54],
@@ -1529,52 +1794,25 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
           lineColor: [200, 200, 200],
           lineWidth: 0.2,
         },
-        columnStyles: {
-          0: { cellWidth: 110, fontStyle: 'bold' },
-          1: { cellWidth: 30, halign: 'center' },
-          2: { cellWidth: 30, halign: 'center' }
-        },
+        columnStyles: columnStyles,
         margin: { left: 20, right: 20 },
         didParseCell: (data: Record<string, any>): void => {
           if (data.section === 'body') {
             data.cell.minHeight = 20;
           }
-          if (data.section === 'body' && data.column.index === 2) {
-            const val = data.row.raw[2] as string
+          if (data.section === 'body' && data.column.index === (hasIcons ? 2 : 1)) {
+            const val = data.row.raw[hasIcons ? 2 : 1] as string;
             if (val === 'Defect') {
-              data.cell.styles.textColor = [220, 50, 50]
-              data.cell.styles.fontStyle = 'bold'
+              data.cell.styles.textColor = [220, 50, 50];
+              data.cell.styles.fontStyle = 'bold';
             } else if (val === 'OK') {
-              data.cell.styles.textColor = [34, 139, 34]
+              data.cell.styles.textColor = [34, 139, 34];
             } else if (val === 'N/A') {
-              data.cell.styles.textColor = [100, 100, 100]
+              data.cell.styles.textColor = [100, 100, 100];
             }
-          }
-          if (data.section === 'body' && data.column.index === 1) {
-            data.cell.styles.lineWidth = 0;
           }
         },
-        didDrawCell: (data: Record<string, any>): void => {
-          if (data.section === 'body' && data.column.index === 1) {
-            const item = data.row.raw[0] as string;
-            const iconFile = iconMapForForm?.[item];
-            if (!iconFile) return;
-            const base64 = iconBase64Map.get(iconFile);
-            if (!base64) return;
-
-            try {
-              const cellWidth = data.cell.width;
-              const cellHeight = data.cell.height;
-              const maxImgSize = Math.min(cellWidth, cellHeight) - 4;
-              const imgSize = Math.min(25, maxImgSize);
-              const x = data.cell.x + (cellWidth - imgSize) / 2;
-              const y = data.cell.y + (cellHeight - imgSize) / 2;
-              doc.addImage(base64, 'PNG', x, y, imgSize, imgSize);
-            } catch (e) {
-              console.error(`Failed to draw icon for ${item}`, e);
-            }
-          }
-        }
+        didDrawCell: didDrawCell
       });
       y = (doc as any).lastAutoTable.finalY + 15;
     }
