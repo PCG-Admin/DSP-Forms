@@ -142,7 +142,17 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function DezziTimberTruckForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface DezziTimberTruckFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+// ============================================================================
+// MAIN FORM COMPONENT
+// ============================================================================
+export function DezziTimberTruckForm({ brand }: DezziTimberTruckFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -231,6 +241,7 @@ export function DezziTimberTruckForm() {
           formTitle: "Dezzi Timber Truck Pre-Shift Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -250,7 +261,7 @@ export function DezziTimberTruckForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Dezzi Timber Truck Pre-Shift Checklist</CardTitle>

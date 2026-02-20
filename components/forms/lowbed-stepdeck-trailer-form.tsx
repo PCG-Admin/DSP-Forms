@@ -16,59 +16,274 @@ import Image from "next/image"
 import { BrandLogo } from "@/components/brand-logo"
 
 // ============================================================================
-// INSPECTION ITEMS – exactly as they appear in the Personal/Labour Carrier PDF
+// INSPECTION ITEMS – grouped by section (as per the provided PDF/image)
 // ============================================================================
-const ALL_INSPECTION_ITEMS: string[] = [
-  "License and Phepha",
-  "Protective Structure",
-  "Exhaust",
-  "Steps and Rails",
-  "Clutch",
-  "Hand Brake/Brake Cable",
-  "Battery",
-  "Radiator",
-  "Fan Belt",
-  "Wiring",
-  "Tyres & Spare",
-  "Wheel Nuts",
-  "Mud Flaps",
-  "Fuel & Oil levels",
-  "Fuel & Oil Leaks",
-  "Tow Hitch",
-  "Communication",
-  "Chocks",
-  "Emergency Triangles",
-  "Fire Extinguisher (1 x 1.5kg extinguisher)"
-]
+const SECTIONS: { title: string; items: string[] }[] = [
+  {
+    title: "License and Phepha",
+    items: ["Phepha valid.", "Displayed and visible."]
+  },
+  {
+    title: "Body of Cab/Trailer",
+    items: ["Body work not damaged.", "No dents or scratches."]
+  },
+  {
+    title: "Steps and Rails",
+    items: ["Steps in good condition.", "Not loose/broken."]
+  },
+  {
+    title: "Cab",
+    items: [
+      "Cab neat and tidy.",
+      "Door and mechanism working.",
+      "Door rubber in good condition.",
+      "Door handles functional."
+    ]
+  },
+  {
+    title: "Mirrors",
+    items: [
+      "Mirrors in good condition.",
+      "Not damaged.",
+      "Adequately secured – not loose."
+    ]
+  },
+  {
+    title: "Windscreen, Windows & Wipers",
+    items: [
+      "Clean/secure.",
+      "No cracks or damages to windscreen.",
+      "Window visibility not obscured by cracks.",
+      "Wipers are working."
+    ]
+  },
+  {
+    title: "Air Conditioner",
+    items: ["In working condition."]
+  },
+  {
+    title: "Seats",
+    items: [
+      "Safety belts bolted/secured.",
+      "No damage/not extremely dirty/bleached or dyed.",
+      "Retractor clip in order and clicks into place."
+    ]
+  },
+  {
+    title: "Steering Column",
+    items: [
+      "Steering column in order.",
+      "No excessive movement of steering column when locked in position.",
+      "Reverse steering functional."
+    ]
+  },
+  {
+    title: "Hooter and Reverse Alarm",
+    items: ["Hooter working and in good condition.", "Reverse alarm working."]
+  },
+  {
+    title: "Gauges",
+    items: ["In working order.", "Any warning symbols/lights."]
+  },
+  {
+    title: "Clutch",
+    items: ["Clutch taking correctly – not slipping.", "In working order."]
+  },
+  {
+    title: "Lamps",
+    items: ["Dim/bright lights/brake lights/indicators/hazards/reflector in working order."]
+  },
+  {
+    title: "Brakes",
+    items: ["In working order.", "Sufficient air build up."]
+  },
+  {
+    title: "Handbrake and Trailer Brakes (If Fitted)",
+    items: ["Working."]
+  },
+  {
+    title: "Battery",
+    items: [
+      "Secure.",
+      "Sufficient water.",
+      "Terminals clean/tight & covers on.",
+      "No exposed wiring."
+    ]
+  },
+  {
+    title: "Radiator",
+    items: ["Secure.", "Water level correct.", "No signs of leaking."]
+  },
+  {
+    title: "Wiring",
+    items: ["No loose, damaged or exposed wires.", "No loose broken plugs."]
+  },
+  {
+    title: "Air Tank Drain",
+    items: ["Good condition.", "Drained daily."]
+  },
+  {
+    title: "Oil/Fluid/Air Levels",
+    items: [
+      "Check all oil levels/brake fluid levels/clutch fluid levels at correct.",
+      "Check air gauge in order."
+    ]
+  },
+  {
+    title: "Trailer Deck",
+    items: ["Ensure trailer deck floor is in good condition.", "Not rusted."]
+  },
+  {
+    title: "Tow Bar & Hitch/King Pin",
+    items: ["Bolts, eyes and hitch in good condition.", "No wearing on the king pin."]
+  },
+  {
+    title: "Landing Gear",
+    items: ["Ensure stabiliser legs and locking pins are in good condition."]
+  },
+  {
+    title: "Anchor Points, Chains & Binders",
+    items: ["Ensure anchor points are safe enough to use.", "Chains and binders to be used are in good condition."]
+  },
+  {
+    title: "Chevron, Reflectors & Tape",
+    items: ["Securely mounted.", "No loose breakages."]
+  },
+  {
+    title: "Hydraulic Controls",
+    items: [
+      "Not loose/responsive.",
+      "No steering play.",
+      "Rear steering.",
+      "Pivot/steering ram pins not loose."
+    ]
+  }
+];
+
+// Flatten all items for progress calculation
+const ALL_ITEMS = SECTIONS.flatMap(section => section.items);
 
 // ============================================================================
-// PER‑ITEM ICON MAPPING – using the image filenames you provided
+// PER‑ITEM ICON MAPPING – using composite keys (section||item) to avoid duplicates
 // ============================================================================
 const itemIconMap: Record<string, string> = {
-  "License and Phepha": "license2.png",
-  "Protective Structure": "protective-structure.png",
-  "Exhaust": "exhaust.png",
-  "Steps and Rails": "steps-and-rails.png",
-  "Clutch": "clutch.png",
-  "Hand Brake/Brake Cable": "hand-brake.png",
-  "Battery": "battery.png",
-  "Radiator": "radiator.png",
-  "Fan Belt": "fan-belt.png",
-  "Wiring": "wiring.png",
-  "Tyres & Spare": "types-spares.png",
-  "Wheel Nuts": "wheel-nut.png",
-  "Mud Flaps": "mud-flap.png",
-  "Fuel & Oil levels": "fuel-oil-levels.png",
-  "Fuel & Oil Leaks": "fuel-leaks.png",
-  "Tow Hitch": "tow-hitch.png",
-  "Communication": "communication.png",
-  "Chocks": "wheel-nut.png",          // fallback – replace if a chocks image exists
-  "Emergency Triangles": "emergency-triangle.png",
-  "Fire Extinguisher (1 x 1.5kg extinguisher)": "fire-extinguisher.png"
-}
+  // License and Phepha
+  "License and Phepha||Phepha valid.": "license2.png",
+  "License and Phepha||Displayed and visible.": "license2.png",
+
+  // Body of Cab/Trailer
+  "Body of Cab/Trailer||Body work not damaged.": "cabs.png",
+  "Body of Cab/Trailer||No dents or scratches.": "cabs.png",
+
+  // Steps and Rails
+  "Steps and Rails||Steps in good condition.": "steps-and-rails.png",
+  "Steps and Rails||Not loose/broken.": "steps-and-rails.png",
+
+  // Cab
+  "Cab||Cab neat and tidy.": "cabs.png",
+  "Cab||Door and mechanism working.": "cabs.png",
+  "Cab||Door rubber in good condition.": "cabs.png",
+  "Cab||Door handles functional.": "cabs.png",
+
+  // Mirrors
+  "Mirrors||Mirrors in good condition.": "mirrors2.png",
+  "Mirrors||Not damaged.": "mirrors2.png",
+  "Mirrors||Adequately secured – not loose.": "mirrors2.png",
+
+  // Windscreen, Windows & Wipers
+  "Windscreen, Windows & Wipers||Clean/secure.": "wipes.png",
+  "Windscreen, Windows & Wipers||No cracks or damages to windscreen.": "wipes.png",
+  "Windscreen, Windows & Wipers||Window visibility not obscured by cracks.": "wipes.png",
+  "Windscreen, Windows & Wipers||Wipers are working.": "wipes.png",
+
+  // Air Conditioner
+  "Air Conditioner||In working condition.": "air-conditioner.png",
+
+  // Seats
+  "Seats||Safety belts bolted/secured.": "safety-belt.png",
+  "Seats||No damage/not extremely dirty/bleached or dyed.": "safety-belt.png",
+  "Seats||Retractor clip in order and clicks into place.": "safety-belt.png",
+
+  // Steering Column
+  "Steering Column||Steering column in order.": "steering-column.png",
+  "Steering Column||No excessive movement of steering column when locked in position.": "steering-column.png",
+  "Steering Column||Reverse steering functional.": "steering-column.png",
+
+  // Hooter and Reverse Alarm
+  "Hooter and Reverse Alarm||Hooter working and in good condition.": "hooters.png",
+  "Hooter and Reverse Alarm||Reverse alarm working.": "hooters.png",
+
+  // Gauges
+  "Gauges||In working order.": "gauges.png",
+  "Gauges||Any warning symbols/lights.": "gauges.png",
+
+  // Clutch
+  "Clutch||Clutch taking correctly – not slipping.": "clutch.png",
+  "Clutch||In working order.": "clutch.png",
+
+  // Lamps
+  "Lamps||Dim/bright lights/brake lights/indicators/hazards/reflector in working order.": "led.png",
+
+  // Brakes
+  "Brakes||In working order.": "foot-brake.png",
+  "Brakes||Sufficient air build up.": "foot-brake.png",
+
+  // Handbrake and Trailer Brakes (If Fitted)
+  "Handbrake and Trailer Brakes (If Fitted)||Working.": "hand-brake.png",
+
+  // Battery
+  "Battery||Secure.": "battery.png",
+  "Battery||Sufficient water.": "battery.png",
+  "Battery||Terminals clean/tight & covers on.": "battery.png",
+  "Battery||No exposed wiring.": "battery.png",
+
+  // Radiator
+  "Radiator||Secure.": "radiator.png",
+  "Radiator||Water level correct.": "radiator.png",
+  "Radiator||No signs of leaking.": "radiator.png",
+
+  // Wiring
+  "Wiring||No loose, damaged or exposed wires.": "wiring.png",
+  "Wiring||No loose broken plugs.": "wiring.png",
+
+  // Air Tank Drain
+  "Air Tank Drain||Good condition.": "air-fuel-leaks.png",
+  "Air Tank Drain||Drained daily.": "air-fuel-leaks.png",
+
+  // Oil/Fluid/Air Levels
+  "Oil/Fluid/Air Levels||Check all oil levels/brake fluid levels/clutch fluid levels at correct.": "oil-fluid-air-level.png",
+  "Oil/Fluid/Air Levels||Check air gauge in order.": "oil-fluid-air-level.png",
+
+  // Trailer Deck
+  "Trailer Deck||Ensure trailer deck floor is in good condition.": "boom-structure.png",
+  "Trailer Deck||Not rusted.": "boom-structure.png",
+
+  // Tow Bar & Hitch/King Pin
+  "Tow Bar & Hitch/King Pin||Bolts, eyes and hitch in good condition.": "tow-hitch.png",
+  "Tow Bar & Hitch/King Pin||No wearing on the king pin.": "tow-hitch.png",
+
+  // Landing Gear
+  "Landing Gear||Ensure stabiliser legs and locking pins are in good condition.": "landing-gear.png",
+
+  // Anchor Points, Chains & Binders
+  "Anchor Points, Chains & Binders||Ensure anchor points are safe enough to use.": "anchor-points.png",
+  "Anchor Points, Chains & Binders||Chains and binders to be used are in good condition.": "anchor-points.png",
+
+  // Chevron, Reflectors & Tape
+  "Chevron, Reflectors & Tape||Securely mounted.": "led.png",
+  "Chevron, Reflectors & Tape||No loose breakages.": "led.png",
+
+  // Hydraulic Controls
+  "Hydraulic Controls||Not loose/responsive.": "hydraulic-controls.png",
+  "Hydraulic Controls||No steering play.": "hydraulic-controls.png",
+  "Hydraulic Controls||Rear steering.": "hydraulic-controls.png",
+  "Hydraulic Controls||Pivot/steering ram pins not loose.": "hydraulic-controls.png",
+};
+
+const FALLBACK_ICON = "license2.png";
 
 // ============================================================================
-// PER‑ITEM ROW COMPONENT – unchanged
+// PER‑ITEM ROW COMPONENT (with icon column)
 // ============================================================================
 interface ItemRowProps {
   item: string
@@ -130,25 +345,27 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
 // ============================================================================
 // PROPS INTERFACE
 // ============================================================================
-interface PersonalLabourCarrierFormProps {
+interface LowbedStepdeckTrailerFormProps {
   brand: 'ringomode' | 'cintasign'
 }
 
-export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormProps) {
+// ============================================================================
+// MAIN FORM COMPONENT
+// ============================================================================
+export function LowbedStepdeckTrailerForm({ brand }: LowbedStepdeckTrailerFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ---------- Driver Information (labels exactly as in PDF) ----------
+  // ---------- Driver Information ----------
   const [formData, setFormData] = useState({
     driverName: "",
-    vehicleRegistration: "",
+    truckRegistration: "",
     date: new Date().toISOString().split("T")[0],
-    validTrainingCard: "",
-    driversLicenseAvailable: "",
-    odometerStart: "",
-    odometerStop: "",
+    openingKilometers: "",
+    closingKilometers: "",
+    validDriversLicenseExp: "",
+    trailerRegistration: "",
     pdpExpiryDate: "",
-    firstAidCardExpiry: "",
   })
 
   // ---------- Auto‑generate Document Number ----------
@@ -158,15 +375,15 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
     const month = (date.getMonth() + 1).toString().padStart(2, "0")
     const day = date.getDate().toString().padStart(2, "0")
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0")
-    return `PC-${year}${month}${day}-${random}`
+    return `LT-${year}${month}${day}-${random}`
   }, [])
 
   // ---------- Inspection Items State ----------
   const [items, setItems] = useState<Record<string, CheckStatus>>(
-    Object.fromEntries(ALL_INSPECTION_ITEMS.map((item) => [item, null]))
+    Object.fromEntries(ALL_ITEMS.map((item) => [item, null]))
   )
 
-  // ---------- Defect Details (always visible) ----------
+  // ---------- Defect Details ----------
   const [defectDetails, setDefectDetails] = useState("")
 
   // ---------- Signature Pad ----------
@@ -281,13 +498,18 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.driverName || !formData.vehicleRegistration) {
+    if (!formData.driverName || !formData.truckRegistration) {
       toast.error("Please fill in all required fields")
       return
     }
 
     if (!allItemsChecked) {
       toast.error("Please check all inspection items")
+      return
+    }
+
+    if (hasDefects && !defectDetails.trim()) {
+      toast.error("Please provide details for the defects")
       return
     }
 
@@ -304,11 +526,11 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          formType: "personal-labour-carrier",
-          formTitle: "Personal / Labour Carrier Inspection Checklist",
+          formType: "lowbed-stepdeck-trailer",
+          formTitle: "Lowbed And Step Deck Trailer Pre-Use Inspection Checklist",
           submittedBy: formData.driverName,
           hasDefects,
-          brand: brand, // ✅ use prop
+          brand: brand, // ✅ use prop instead of hardcoded
           data: {
             ...formData,
             documentNo,
@@ -334,7 +556,7 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 p-4 pb-12 lg:p-8 lg:pb-16">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-4xl space-y-6 p-4 pb-12 lg:p-8 lg:pb-16">
       {/* Back Button */}
       <div className="flex items-center gap-3">
         <Button type="button" variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground">
@@ -353,10 +575,10 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">
-            Personal / Labour Carrier Inspection Checklist
+            Lowbed And Step Deck Trailer Pre-Use Inspection Checklist
           </CardTitle>
           <CardDescription>
-            Document Ref: HSEMS/8.1.19/REG/011 | Rev. 4 | 23.03.2024
+            Document Ref: HSEMS/8.1.19/REG/021 | Rev. 1 | 01.03.2025
           </CardDescription>
         </CardHeader>
       </Card>
@@ -373,7 +595,7 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
         </CardHeader>
         <CardContent>
           <p className="text-sm text-amber-700">
-            The driver is to conduct a 10 minute physical walkabout of the vehicle on a daily basis
+            The mechanic is to conduct a 10 minute physical walkabout of the vehicle on a daily basis
             and assess the condition of the vehicle.
           </p>
           <p className="mt-2 text-sm text-amber-700">
@@ -386,11 +608,11 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
       {/* ===== DRIVER INFORMATION ===== */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base text-foreground">Driver Information</CardTitle>
+          <CardTitle className="text-base text-foreground">Driver & Vehicle Information</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="driverName">Driver's name <span className="text-destructive">*</span></Label>
+            <Label htmlFor="driverName">Drivers name <span className="text-destructive">*</span></Label>
             <Input
               id="driverName"
               value={formData.driverName}
@@ -401,16 +623,11 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="documentNo">Document No.</Label>
-            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="vehicleRegistration">Vehicle registration <span className="text-destructive">*</span></Label>
+            <Label htmlFor="truckRegistration">Truck registration <span className="text-destructive">*</span></Label>
             <Input
-              id="vehicleRegistration"
-              value={formData.vehicleRegistration}
-              onChange={(e) => setFormData((p) => ({ ...p, vehicleRegistration: e.target.value }))}
+              id="truckRegistration"
+              value={formData.truckRegistration}
+              onChange={(e) => setFormData((p) => ({ ...p, truckRegistration: e.target.value }))}
               placeholder="e.g. ABC 123 GP"
               required
             />
@@ -427,64 +644,54 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="validTrainingCard">Valid training card (exp date)</Label>
+            <Label htmlFor="openingKilometers">Opening kilometers</Label>
             <Input
-              id="validTrainingCard"
-              type="date"
-              value={formData.validTrainingCard}
-              onChange={(e) => setFormData((p) => ({ ...p, validTrainingCard: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="driversLicenseAvailable">Driver's license available (exp date)</Label>
-            <Input
-              id="driversLicenseAvailable"
-              type="date"
-              value={formData.driversLicenseAvailable}
-              onChange={(e) => setFormData((p) => ({ ...p, driversLicenseAvailable: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="odometerStart">Odometer start</Label>
-            <Input
-              id="odometerStart"
+              id="openingKilometers"
               type="number"
-              value={formData.odometerStart}
-              onChange={(e) => setFormData((p) => ({ ...p, odometerStart: e.target.value }))}
-              placeholder="e.g. 45200"
+              value={formData.openingKilometers}
+              onChange={(e) => setFormData((p) => ({ ...p, openingKilometers: e.target.value }))}
+              placeholder="e.g. 125000"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="odometerStop">Odometer stop</Label>
+            <Label htmlFor="closingKilometers">Closing kilometers</Label>
             <Input
-              id="odometerStop"
+              id="closingKilometers"
               type="number"
-              value={formData.odometerStop}
-              onChange={(e) => setFormData((p) => ({ ...p, odometerStop: e.target.value }))}
-              placeholder="e.g. 45350"
+              value={formData.closingKilometers}
+              onChange={(e) => setFormData((p) => ({ ...p, closingKilometers: e.target.value }))}
+              placeholder="e.g. 125350"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pdpExpiryDate">PDP (exp date)</Label>
+            <Label htmlFor="validDriversLicenseExp">Valid drivers license (exp date)</Label>
+            <Input
+              id="validDriversLicenseExp"
+              type="date"
+              value={formData.validDriversLicenseExp}
+              onChange={(e) => setFormData((p) => ({ ...p, validDriversLicenseExp: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="trailerRegistration">Trailer registration</Label>
+            <Input
+              id="trailerRegistration"
+              value={formData.trailerRegistration}
+              onChange={(e) => setFormData((p) => ({ ...p, trailerRegistration: e.target.value }))}
+              placeholder="e.g. TRL-001"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pdpExpiryDate">PDP expiry date</Label>
             <Input
               id="pdpExpiryDate"
               type="date"
               value={formData.pdpExpiryDate}
               onChange={(e) => setFormData((p) => ({ ...p, pdpExpiryDate: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="firstAidCardExpiry">First aid card (exp date)</Label>
-            <Input
-              id="firstAidCardExpiry"
-              type="date"
-              value={formData.firstAidCardExpiry}
-              onChange={(e) => setFormData((p) => ({ ...p, firstAidCardExpiry: e.target.value }))}
             />
           </div>
         </CardContent>
@@ -505,7 +712,7 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
       {/* ===== PROGRESS ===== */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
-          Progress: {checkedCount} / {ALL_INSPECTION_ITEMS.length} items checked
+          Progress: {checkedCount} / {ALL_ITEMS.length} items checked
         </span>
         {allItemsChecked && (
           <span className="flex items-center gap-1 text-green-600">
@@ -517,36 +724,40 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-primary transition-all"
-          style={{ width: `${(checkedCount / ALL_INSPECTION_ITEMS.length) * 100}%` }}
+          style={{ width: `${(checkedCount / ALL_ITEMS.length) * 100}%` }}
         />
       </div>
 
-      {/* ===== INSPECTION ITEMS – flat list ===== */}
+      {/* ===== INSPECTION ITEMS – grouped by section, with icons ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base text-foreground">Inspection Items</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {ALL_INSPECTION_ITEMS.map((item) => {
-            const iconFile = itemIconMap[item]
-            if (!iconFile) {
-              console.warn(`No icon mapped for item: ${item}`)
-              return null
-            }
-            return (
-              <ItemRow
-                key={item}
-                item={item}
-                value={items[item]}
-                onChange={(val) => handleItemChange(item, val)}
-                iconSrc={`/images/${iconFile}`}
-              />
-            )
-          })}
+        <CardContent className="space-y-6">
+          {SECTIONS.map((section) => (
+            <div key={section.title} className="space-y-2">
+              <h4 className="text-sm font-semibold text-primary">{section.title}</h4>
+              <div className="ml-4 space-y-2">
+                {section.items.map((item) => {
+                  const compositeKey = `${section.title}||${item}`;
+                  const iconFile = itemIconMap[compositeKey] || FALLBACK_ICON;
+                  return (
+                    <ItemRow
+                      key={item}
+                      item={item}
+                      value={items[item]}
+                      onChange={(val) => handleItemChange(item, val)}
+                      iconSrc={`/images/${iconFile}`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
 
-      {/* ===== DEFECTS SECTION (always visible) ===== */}
+      {/* ===== DEFECTS SECTION ===== */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -613,7 +824,7 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
         <div>
           <span className="font-semibold">Document Reference No.</span>
           <br />
-          HSEMS / 8.1.19 / REG / 011
+          HSEMS / 8.1.19 / REG / 021
         </div>
         <div>
           <span className="font-semibold">Author</span>
@@ -623,12 +834,12 @@ export function PersonalLabourCarrierForm({ brand }: PersonalLabourCarrierFormPr
         <div>
           <span className="font-semibold">Revision</span>
           <br />
-          4
+          1
         </div>
         <div>
           <span className="font-semibold">Creation Date</span>
           <br />
-          23.03.2024
+          01.03.2025
         </div>
       </div>
 

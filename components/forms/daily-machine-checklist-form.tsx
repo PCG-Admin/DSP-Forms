@@ -176,7 +176,11 @@ function SimpleItemRow({ item, value, onChange }: SimpleItemRowProps) {
   )
 }
 
-export function DailyMachineChecklistForm() {
+interface DailyMachineChecklistFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function DailyMachineChecklistForm({ brand }: DailyMachineChecklistFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -271,6 +275,7 @@ export function DailyMachineChecklistForm() {
           formTitle: "Daily Machine Checklist",
           submittedBy: formData.vehicleEquipment,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -290,7 +295,7 @@ export function DailyMachineChecklistForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Daily Machine Checklist</CardTitle>

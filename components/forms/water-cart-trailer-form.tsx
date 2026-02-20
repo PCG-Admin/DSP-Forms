@@ -107,7 +107,14 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function WaterCartTrailerForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface WaterCartTrailerFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function WaterCartTrailerForm({ brand }: WaterCartTrailerFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -185,12 +192,13 @@ export function WaterCartTrailerForm() {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({
           formType: "water-cart-trailer",
           formTitle: "Water Cart Trailer & Pressure Washer Checklist",
           submittedBy: formData.userName,
           hasDefects,
+          brand: brand, // ✅ include brand
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -210,7 +218,7 @@ export function WaterCartTrailerForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Water Cart Trailer & Pressure Washer Checklist</CardTitle>

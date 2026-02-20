@@ -156,7 +156,14 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function PonsseBisonForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface PonsseBisonFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function PonsseBisonForm({ brand }: PonsseBisonFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -322,12 +329,13 @@ export function PonsseBisonForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include",
         body: JSON.stringify({
           formType: "ponsse-bison",
           formTitle: "Ponsse Bison Pre-Shift Inspection Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: {
             ...formData,
             documentNo,
@@ -368,7 +376,7 @@ export function PonsseBisonForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">

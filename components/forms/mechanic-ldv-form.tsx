@@ -131,7 +131,14 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function MechanicLDVForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface MechanicLDVFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function MechanicLDVForm({ brand }: MechanicLDVFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -297,12 +304,13 @@ export function MechanicLDVForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include",
         body: JSON.stringify({
           formType: "mechanic-ldv",
           formTitle: "Mechanic LDV Daily Checklist",
           submittedBy: formData.driverName,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: {
             ...formData,
             documentNo,
@@ -343,7 +351,7 @@ export function MechanicLDVForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">

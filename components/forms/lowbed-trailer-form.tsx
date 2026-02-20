@@ -153,7 +153,14 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function LowbedTrailerForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface LowbedTrailerFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function LowbedTrailerForm({ brand }: LowbedTrailerFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -325,12 +332,13 @@ export function LowbedTrailerForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include",
         body: JSON.stringify({
           formType: "lowbed-trailer",
           formTitle: "Lowbed And Roll Back Trailer Pre-Shift Use Inspection Checklist",
           submittedBy: formData.driverName,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: {
             ...formData,
             documentNo,
@@ -371,7 +379,7 @@ export function LowbedTrailerForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">

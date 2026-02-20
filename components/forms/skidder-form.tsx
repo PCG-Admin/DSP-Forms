@@ -109,7 +109,14 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function SkidderForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface SkidderFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function SkidderForm({ brand }: SkidderFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -186,12 +193,13 @@ export function SkidderForm() {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({
           formType: "skidder",
           formTitle: "Skidder (Grapple & Cable) Pre-Shift Inspection Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -210,7 +218,7 @@ export function SkidderForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Skidder (Grapple & Cable) Pre-Shift Inspection Checklist</CardTitle>

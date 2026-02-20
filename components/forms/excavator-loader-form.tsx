@@ -126,7 +126,14 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function ExcavatorLoaderForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface ExcavatorLoaderFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function ExcavatorLoaderForm({ brand }: ExcavatorLoaderFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -214,6 +221,7 @@ export function ExcavatorLoaderForm() {
           formTitle: "Excavator Loader Pre-Shift Inspection Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
+          brand: brand, // ✅ include the brand from props
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -233,7 +241,7 @@ export function ExcavatorLoaderForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">

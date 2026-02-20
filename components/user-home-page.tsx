@@ -1,251 +1,88 @@
 ﻿"use client"
 
-import Image from "next/image"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import * as Icons from "lucide-react"
 import { 
-  Truck, 
-  Tractor, 
-  TreePine, 
-  Container, 
-  Wrench,
-  Bus,
-  Combine,
-  Logs,
-  Fuel,
-  FileText,
-  Droplets,
-  ClipboardCheck,
   ArrowRight, 
   ClipboardList
 } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
+import { createClient } from "@/lib/supabase/client"
 
-const forms = [
-  // Existing forms (16)
-  {
-    id: "light-delivery",
-    title: "Light Delivery Vehicle",
-    subtitle: "Daily Checklist",
-    description: "Pre-trip inspection for light delivery vehicles including checks for tyres, brakes, lights, and safety equipment.",
-    icon: Truck,
-    href: "/light-delivery",
-    docRef: "HSEMS/8.1.19/REG/012",
-    itemCount: 26,
-  },
-  {
-    id: "excavator-loader",
-    title: "Excavator Loader",
-    subtitle: "Pre-Shift Inspection",
-    description: "Comprehensive pre-shift inspection for excavator loaders covering hydraulics, tracks, controls, and safety systems.",
-    icon: Tractor,
-    href: "/excavator-loader",
-    docRef: "HSEMS/8.1.19/REG/002",
-    itemCount: 33,
-  },
-  {
-    id: "excavator-harvester",
-    title: "Excavator Harvester",
-    subtitle: "Pre-Shift Inspection",
-    description: "Pre-shift inspection for excavator harvesters including harvester head, feed rollers, delimbing knives, and safety checks.",
-    icon: TreePine,
-    href: "/excavator-harvester",
-    docRef: "HSEMS/8.1.19/REG/001",
-    itemCount: 36,
-  },
-  {
-    id: "lowbed-trailer",
-    title: "Lowbed & Roll Back Trailer",
-    subtitle: "Pre-Shift Inspection",
-    description: "Complete inspection for lowbed and roll back trailers including deck condition, hydraulics, winch, tyres, and coupling systems.",
-    icon: Container,
-    href: "/lowbed-trailer",
-    docRef: "HSEMS/8.1.19/REG/020",
-    itemCount: 29,
-  },
-  {
-    id: "mechanic-ldv",
-    title: "Mechanic LDV",
-    subtitle: "Daily Checklist",
-    description: "Specialized daily inspection for mechanic light delivery vehicles covering tools, equipment, and vehicle systems.",
-    icon: Wrench,
-    href: "/mechanic-ldv",
-    docRef: "HSEMS/8.1.19/REG/017",
-    itemCount: 24,
-  },
-  {
-    id: "personal-labour-carrier",
-    title: "Personal / Labour Carrier",
-    subtitle: "Inspection Checklist",
-    description: "Daily inspection for personnel carriers including safety equipment, tyres, brakes, and passenger area.",
-    icon: Bus,
-    href: "/personal-labour-carrier",
-    docRef: "HSEMS/8.1.19/REG/011",
-    itemCount: 20,
-  },
-  {
-    id: "ponsse-bison",
-    title: "Ponsse Bison",
-    subtitle: "Pre-Shift Inspection",
-    description: "Complete pre-shift inspection for the Ponsse Bison harvester including boom structure, hydraulics, grab, and safety systems.",
-    icon: Combine,
-    href: "/ponsse-bison",
-    docRef: "HSEMS/8.1.19/REG/022",
-    itemCount: 34,
-  },
-  {
-    id: "self-loading-forwarder",
-    title: "Self Loading Forwarder",
-    subtitle: "Pre-Shift Inspection",
-    description: "Pre-shift inspection for self‑loading forwarders covering boom, hydraulics, grab, tyres, and safety systems.",
-    icon: Tractor,
-    href: "/self-loading-forwarder",
-    docRef: "HSEMS/8.1.19/REG/003",
-    itemCount: 32,
-  },
-  {
-    id: "skidder",
-    title: "Skidder (Grapple & Cable)",
-    subtitle: "Pre-Shift Inspection",
-    description: "Pre-shift inspection for skidders including grapple, cable, winch, hydraulics, and safety systems.",
-    icon: Logs,
-    href: "/skidder",
-    docRef: "HSEMS/8.1.19/REG/006",
-    itemCount: 28,
-  },
-  {
-    id: "timber-truck-trailer",
-    title: "Timber Truck And Trailer",
-    subtitle: "Checklist",
-    description: "Complete inspection for timber trucks and trailers covering brakes, lights, tyres, and fire extinguisher.",
-    icon: Truck,
-    href: "/timber-truck-trailer",
-    docRef: "HSEMS/8.1.19/REG/010",
-    itemCount: 24,
-  },
-  {
-    id: "trailer",
-    title: "Trailer (Excluding Labour)",
-    subtitle: "Inspection Checklist",
-    description: "Trailer inspection covering body, lights, brakes, tyres, and safety equipment.",
-    icon: Container,
-    href: "/trailer",
-    docRef: "HSEMS/4.4.6.19/REG/013",
-    itemCount: 15,
-  },
-  {
-    id: "service-diesel-truck",
-    title: "Service/Diesel Truck",
-    subtitle: "Pre-Shift Inspection",
-    description: "Pre-shift inspection for service/diesel trucks including engine, brakes, lights, and fluid levels.",
-    icon: Fuel,
-    href: "/service-diesel-truck",
-    docRef: "HSEMS/8.1.19/REG/???",
-    itemCount: 23,
-  },
-  {
-    id: "vehicle-job-card",
-    title: "Motorised Equipment/Vehicle Job Card",
-    subtitle: "Work Order",
-    description: "Job card for recording repairs, maintenance, and tests on equipment and vehicles.",
-    icon: FileText,
-    href: "/vehicle-job-card",
-    docRef: "HSEMS/8.1.19/REG/???",
-    itemCount: 0,
-  },
-  {
-    id: "water-cart-trailer",
-    title: "Water Cart Trailer & Pressure Washer",
-    subtitle: "Inspection Checklist",
-    description: "Daily inspection for water cart trailers and pressure washers covering lights, tyres, tank, hose, and engine.",
-    icon: Droplets,
-    href: "/water-cart-trailer",
-    docRef: "HSEMS/8.1.19/REG/015",
-    itemCount: 27,
-  },
-  {
-    id: "weekly-machinery-condition",
-    title: "Weekly Machinery Condition Assessment",
-    subtitle: "Weekly Assessment",
-    description: "Comprehensive weekly assessment of machinery condition covering engine, chassis, transmission, hydraulics, and attachments.",
-    icon: ClipboardCheck,
-    href: "/weekly-machinery-condition",
-    docRef: "HSEMS/8.1.19/DOC/011",
-    itemCount: 84,
-  },
-  {
-    id: "bell-timber-truck",
-    title: "Bell Timber Truck",
-    subtitle: "Pre-Shift Checklist",
-    description: "Pre-shift inspection for Bell timber trucks covering cab, hydraulics, brakes, boom, and safety equipment.",
-    icon: Combine,
-    href: "/bell-timber-truck",
-    docRef: "HSEMS/8.1.19/REG/019",
-    itemCount: 43,
-  },
-  // NEW FORMS (4)
-  {
-    id: "daily-attachment-checklist",
-    title: "Daily Attachment Checklist",
-    subtitle: "Daily Checklist",
-    description: "Daily inspection for harvester attachments including head, grab, and winch.",
-    icon: ClipboardList,
-    href: "/daily-attachment-checklist",
-    docRef: "HSEMS/8.1.19/REG/012",
-    itemCount: 39,
-  },
-  {
-    id: "daily-machine-checklist",
-    title: "Daily Machine Checklist",
-    subtitle: "Daily Checklist",
-    description: "Daily inspection for machines covering engine, chassis, hydraulics, and attachments.",
-    icon: ClipboardCheck,
-    href: "/daily-machine-checklist",
-    docRef: "HSEMS/8.1.19/DOC/011",
-    itemCount: 84,
-  },
-  {
-    id: "dezzi-timber-truck",
-    title: "Dezzi Timber Truck",
-    subtitle: "Pre-Shift Checklist",
-    description: "Pre-shift inspection for Dezzi timber trucks covering cab, hydraulics, brakes, boom, and safety equipment.",
-    icon: Truck,
-    href: "/dezzi-timber-truck",
-    docRef: "HSEMS/8.1.19/REG/004",
-    itemCount: 41,
-  },
-  {
-    id: "diesel-cart-trailer",
-    title: "Diesel Cart Trailer",
-    subtitle: "Inspection Checklist",
-    description: "Inspection for diesel cart trailers covering tank, lights, brakes, tyres, and fire extinguisher.",
-    icon: Container,
-    href: "/diesel-cart-trailer",
-    docRef: "HSEMS/8.1.9/REG/014",
-    itemCount: 15,
-  },
-  // NEW: Cintasign Shorthaul
-  {
-    id: "cintasign-shorthaul",
-    title: "Cintasign Shorthaul",
-    subtitle: "Trip Sheet",
-    description: "Daily log for shorthaul operations including fleet details and breakdown hours.",
-    icon: Truck,
-    href: "/cintasign/shorthaul",
-    docRef: "CINT/LOG/001",
-    itemCount: 0, // Not an inspection checklist
-  },
-]
+// Map icon names to actual Lucide components
+const iconMap: Record<string, any> = {
+  Truck: Icons.Truck,
+  Tractor: Icons.Tractor,
+  TreePine: Icons.TreePine,
+  Container: Icons.Container,
+  Wrench: Icons.Wrench,
+  Bus: Icons.Bus,
+  Combine: Icons.Combine,
+  Logs: Icons.Logs,
+  Fuel: Icons.Fuel,
+  FileText: Icons.FileText,
+  Droplets: Icons.Droplets,
+  ClipboardCheck: Icons.ClipboardCheck,
+  ClipboardList: Icons.ClipboardList,
+}
 
-export function UserHomePage() {
+interface Form {
+  id: string
+  form_type: string
+  title: string
+  subtitle: string
+  description: string
+  document_ref: string
+  item_count: number
+  icon_name: string
+  is_active: boolean
+}
+
+interface UserHomePageProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function UserHomePage({ brand }: UserHomePageProps) {
+  const [forms, setForms] = useState<Form[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function loadForms() {
+      const { data, error } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('is_active', true)
+        .order('title')
+
+      if (error) {
+        console.error('Error loading forms:', error)
+      } else {
+        setForms(data || [])
+      }
+      setLoading(false)
+    }
+    loadForms()
+  }, [supabase])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading forms...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-7xl p-4 lg:p-8">
         {/* Hero Section */}
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4">
-            <BrandLogo width={180} height={60} />
+            <BrandLogo brand={brand} width={180} height={60} />
           </div>
           <h1 className="text-balance text-2xl font-bold text-foreground lg:text-3xl">
             HSE Inspection Checklists
@@ -269,7 +106,7 @@ export function UserHomePage() {
         {/* Form Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
           {forms.map((form) => {
-            const Icon = form.icon
+            const Icon = iconMap[form.icon_name] || Icons.FileText
             return (
               <Card
                 key={form.id}
@@ -289,13 +126,13 @@ export function UserHomePage() {
                   
                   {/* Document Reference & Item Count */}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{form.itemCount > 0 ? `${form.itemCount} inspection items` : "No inspection items"}</span>
-                    <span className="font-mono">{form.docRef}</span>
+                    <span>{form.item_count > 0 ? `${form.item_count} inspection items` : "No inspection items"}</span>
+                    <span className="font-mono">{form.document_ref}</span>
                   </div>
 
                   {/* Start Inspection Button */}
                   <Button asChild className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 mt-2">
-                    <Link href={form.href}>
+                    <Link href={`/${form.form_type}`}>
                       Start Inspection
                       <ArrowRight className="h-4 w-4" />
                     </Link>
@@ -305,10 +142,6 @@ export function UserHomePage() {
             )
           })}
         </div>
-
-        {/* Quick Stats Row */}
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-20">
-         </div>
 
         {/* Footer */}
         <footer className="mt-12 border-t border-border pt-6 text-center text-xs text-muted-foreground">

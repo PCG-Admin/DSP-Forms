@@ -15,7 +15,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { BrandLogo } from "@/components/brand-logo"
 
-export function VehicleJobCardForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface VehicleJobCardFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -178,12 +185,13 @@ export function VehicleJobCardForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include",
         body: JSON.stringify({
           formType: "vehicle-job-card",
           formTitle: "Motorised Equipment/Vehicle Job Card",
           submittedBy: formData.driverName,
           hasDefects: false,
+          brand: brand, // ✅ include brand
           data: {
             ...formData,
             documentNo,
@@ -222,7 +230,7 @@ export function VehicleJobCardForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE MANAGEMENT SYSTEM</div>
           <CardTitle className="text-2xl text-foreground">Motorised Equipment/Vehicle Job Card</CardTitle>

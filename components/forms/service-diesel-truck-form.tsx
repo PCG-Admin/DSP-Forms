@@ -105,7 +105,14 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function ServiceDieselTruckForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface ServiceDieselTruckFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function ServiceDieselTruckForm({ brand }: ServiceDieselTruckFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -190,12 +197,13 @@ export function ServiceDieselTruckForm() {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({
           formType: "service-diesel-truck",
           formTitle: "Service/Diesel Truck Pre-Shift Inspection Checklist",
           submittedBy: formData.driverName,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -215,7 +223,7 @@ export function ServiceDieselTruckForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">

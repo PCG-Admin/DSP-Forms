@@ -89,7 +89,17 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function DieselCartTrailerForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface DieselCartTrailerFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+// ============================================================================
+// MAIN FORM COMPONENT
+// ============================================================================
+export function DieselCartTrailerForm({ brand }: DieselCartTrailerFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -173,6 +183,7 @@ export function DieselCartTrailerForm() {
           formTitle: "Diesel Cart Trailer Inspection Checklist",
           submittedBy: formData.userName,
           hasDefects,
+          brand: brand, // ✅ include the brand from props
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -192,7 +203,7 @@ export function DieselCartTrailerForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Diesel Cart Trailer Inspection Checklist</CardTitle>

@@ -871,6 +871,243 @@ const dieselCartTrailerIconMap: Record<string, string> = {
 };
 
 // ============================================================================
+// LOWBED STEPDECK TRAILER – per‑item icon mapping (using composite keys)
+// ============================================================================
+const lowbedStepdeckItemIconMap: Record<string, string> = {
+  // License and Phepha
+  "License and Phepha||Phepha valid.": "license2.png",
+  "License and Phepha||Displayed and visible.": "license2.png",
+  // Body of Cab/Trailer
+  "Body of Cab/Trailer||Body work not damaged.": "cabs.png",
+  "Body of Cab/Trailer||No dents or scratches.": "cabs.png",
+  // Steps and Rails
+  "Steps and Rails||Steps in good condition.": "steps-and-rails.png",
+  "Steps and Rails||Not loose/broken.": "steps-and-rails.png",
+  // Cab
+  "Cab||Cab neat and tidy.": "cabs.png",
+  "Cab||Door and mechanism working.": "cabs.png",
+  "Cab||Door rubber in good condition.": "cabs.png",
+  "Cab||Door handles functional.": "cabs.png",
+  // Mirrors
+  "Mirrors||Mirrors in good condition.": "mirrors2.png",
+  "Mirrors||Not damaged.": "mirrors2.png",
+  "Mirrors||Adequately secured – not loose.": "mirrors2.png",
+  // Windscreen, Windows & Wipers
+  "Windscreen, Windows & Wipers||Clean/secure.": "wipes.png",
+  "Windscreen, Windows & Wipers||No cracks or damages to windscreen.": "wipes.png",
+  "Windscreen, Windows & Wipers||Window visibility not obscured by cracks.": "wipes.png",
+  "Windscreen, Windows & Wipers||Wipers are working.": "wipes.png",
+  // Air Conditioner
+  "Air Conditioner||In working condition.": "air-conditioner.png",
+  // Seats
+  "Seats||Safety belts bolted/secured.": "safety-belt.png",
+  "Seats||No damage/not extremely dirty/bleached or dyed.": "safety-belt.png",
+  "Seats||Retractor clip in order and clicks into place.": "safety-belt.png",
+  // Steering Column
+  "Steering Column||Steering column in order.": "steering-column.png",
+  "Steering Column||No excessive movement of steering column when locked in position.": "steering-column.png",
+  "Steering Column||Reverse steering functional.": "steering-column.png",
+  // Hooter and Reverse Alarm
+  "Hooter and Reverse Alarm||Hooter working and in good condition.": "hooters.png",
+  "Hooter and Reverse Alarm||Reverse alarm working.": "hooters.png",
+  // Gauges
+  "Gauges||In working order.": "gauges.png",
+  "Gauges||Any warning symbols/lights.": "gauges.png",
+  // Clutch
+  "Clutch||Clutch taking correctly – not slipping.": "clutch.png",
+  "Clutch||In working order.": "clutch.png",
+  // Lamps
+  "Lamps||Dim/bright lights/brake lights/indicators/hazards/reflector in working order.": "led.png",
+  // Brakes
+  "Brakes||In working order.": "foot-brake.png",
+  "Brakes||Sufficient air build up.": "foot-brake.png",
+  // Handbrake and Trailer Brakes (If Fitted)
+  "Handbrake and Trailer Brakes (If Fitted)||Working.": "hand-brake.png",
+  // Battery
+  "Battery||Secure.": "battery.png",
+  "Battery||Sufficient water.": "battery.png",
+  "Battery||Terminals clean/tight & covers on.": "battery.png",
+  "Battery||No exposed wiring.": "battery.png",
+  // Radiator
+  "Radiator||Secure.": "radiator.png",
+  "Radiator||Water level correct.": "radiator.png",
+  "Radiator||No signs of leaking.": "radiator.png",
+  // Wiring
+  "Wiring||No loose, damaged or exposed wires.": "wiring.png",
+  "Wiring||No loose broken plugs.": "wiring.png",
+  // Air Tank Drain
+  "Air Tank Drain||Good condition.": "air-fuel-leaks.png",
+  "Air Tank Drain||Drained daily.": "air-fuel-leaks.png",
+  // Oil/Fluid/Air Levels
+  "Oil/Fluid/Air Levels||Check all oil levels/brake fluid levels/clutch fluid levels at correct.": "oil-fluid-air-level.png",
+  "Oil/Fluid/Air Levels||Check air gauge in order.": "oil-fluid-air-level.png",
+  // Trailer Deck
+  "Trailer Deck||Ensure trailer deck floor is in good condition.": "boom-structure.png",
+  "Trailer Deck||Not rusted.": "boom-structure.png",
+  // Tow Bar & Hitch/King Pin
+  "Tow Bar & Hitch/King Pin||Bolts, eyes and hitch in good condition.": "tow-hitch.png",
+  "Tow Bar & Hitch/King Pin||No wearing on the king pin.": "tow-hitch.png",
+  // Landing Gear
+  "Landing Gear||Ensure stabiliser legs and locking pins are in good condition.": "landing-gear.png",
+  // Anchor Points, Chains & Binders
+  "Anchor Points, Chains & Binders||Ensure anchor points are safe enough to use.": "anchor-points.png",
+  "Anchor Points, Chains & Binders||Chains and binders to be used are in good condition.": "anchor-points.png",
+  // Chevron, Reflectors & Tape
+  "Chevron, Reflectors & Tape||Securely mounted.": "led.png",
+  "Chevron, Reflectors & Tape||No loose breakages.": "led.png",
+  // Hydraulic Controls
+  "Hydraulic Controls||Not loose/responsive.": "hydraulic-controls.png",
+  "Hydraulic Controls||No steering play.": "hydraulic-controls.png",
+  "Hydraulic Controls||Rear steering.": "hydraulic-controls.png",
+  "Hydraulic Controls||Pivot/steering ram pins not loose.": "hydraulic-controls.png",
+};
+
+// ============================================================================
+// LOWBED STEPDECK TRAILER SECTIONS (as defined in the web form)
+// ============================================================================
+const lowbedStepdeckSections: { title: string; items: string[] }[] = [
+  {
+    title: "License and Phepha",
+    items: ["Phepha valid.", "Displayed and visible."]
+  },
+  {
+    title: "Body of Cab/Trailer",
+    items: ["Body work not damaged.", "No dents or scratches."]
+  },
+  {
+    title: "Steps and Rails",
+    items: ["Steps in good condition.", "Not loose/broken."]
+  },
+  {
+    title: "Cab",
+    items: [
+      "Cab neat and tidy.",
+      "Door and mechanism working.",
+      "Door rubber in good condition.",
+      "Door handles functional."
+    ]
+  },
+  {
+    title: "Mirrors",
+    items: [
+      "Mirrors in good condition.",
+      "Not damaged.",
+      "Adequately secured – not loose."
+    ]
+  },
+  {
+    title: "Windscreen, Windows & Wipers",
+    items: [
+      "Clean/secure.",
+      "No cracks or damages to windscreen.",
+      "Window visibility not obscured by cracks.",
+      "Wipers are working."
+    ]
+  },
+  {
+    title: "Air Conditioner",
+    items: ["In working condition."]
+  },
+  {
+    title: "Seats",
+    items: [
+      "Safety belts bolted/secured.",
+      "No damage/not extremely dirty/bleached or dyed.",
+      "Retractor clip in order and clicks into place."
+    ]
+  },
+  {
+    title: "Steering Column",
+    items: [
+      "Steering column in order.",
+      "No excessive movement of steering column when locked in position.",
+      "Reverse steering functional."
+    ]
+  },
+  {
+    title: "Hooter and Reverse Alarm",
+    items: ["Hooter working and in good condition.", "Reverse alarm working."]
+  },
+  {
+    title: "Gauges",
+    items: ["In working order.", "Any warning symbols/lights."]
+  },
+  {
+    title: "Clutch",
+    items: ["Clutch taking correctly – not slipping.", "In working order."]
+  },
+  {
+    title: "Lamps",
+    items: ["Dim/bright lights/brake lights/indicators/hazards/reflector in working order."]
+  },
+  {
+    title: "Brakes",
+    items: ["In working order.", "Sufficient air build up."]
+  },
+  {
+    title: "Handbrake and Trailer Brakes (If Fitted)",
+    items: ["Working."]
+  },
+  {
+    title: "Battery",
+    items: [
+      "Secure.",
+      "Sufficient water.",
+      "Terminals clean/tight & covers on.",
+      "No exposed wiring."
+    ]
+  },
+  {
+    title: "Radiator",
+    items: ["Secure.", "Water level correct.", "No signs of leaking."]
+  },
+  {
+    title: "Wiring",
+    items: ["No loose, damaged or exposed wires.", "No loose broken plugs."]
+  },
+  {
+    title: "Air Tank Drain",
+    items: ["Good condition.", "Drained daily."]
+  },
+  {
+    title: "Oil/Fluid/Air Levels",
+    items: [
+      "Check all oil levels/brake fluid levels/clutch fluid levels at correct.",
+      "Check air gauge in order."
+    ]
+  },
+  {
+    title: "Trailer Deck",
+    items: ["Ensure trailer deck floor is in good condition.", "Not rusted."]
+  },
+  {
+    title: "Tow Bar & Hitch/King Pin",
+    items: ["Bolts, eyes and hitch in good condition.", "No wearing on the king pin."]
+  },
+  {
+    title: "Landing Gear",
+    items: ["Ensure stabiliser legs and locking pins are in good condition."]
+  },
+  {
+    title: "Anchor Points, Chains & Binders",
+    items: ["Ensure anchor points are safe enough to use.", "Chains and binders to be used are in good condition."]
+  },
+  {
+    title: "Chevron, Reflectors & Tape",
+    items: ["Securely mounted.", "No loose breakages."]
+  },
+  {
+    title: "Hydraulic Controls",
+    items: [
+      "Not loose/responsive.",
+      "No steering play.",
+      "Rear steering.",
+      "Pivot/steering ram pins not loose."
+    ]
+  }
+];
+
+// ============================================================================
 // FALLBACK ICON – used when a specific item icon is missing
 // ============================================================================
 const FALLBACK_ICON = "license2.png";
@@ -915,7 +1152,11 @@ function getIconMapForForm(formType: string): Record<string, string> | null {
     case "vehicle-job-card":
     case "daily-attachment-checklist":
     case "daily-machine-checklist":
-      // These forms have no icons
+    case "cintasign-shorthaul":
+    case "cintasign-harvesting":
+    case "cintasign-loading":
+    case "lowbed-stepdeck-trailer":
+      // These forms have no icons (or are handled separately)
       return null;
     default:
       return null;
@@ -997,6 +1238,12 @@ function formTypeLabel(type: string): string {
       return "Diesel Cart Trailer Inspection Checklist"
     case "cintasign-shorthaul":
       return "Cintasign Shorthaul Trip Sheet"
+    case "cintasign-harvesting":
+      return "Cintasign Harvesting Sheet"
+    case "cintasign-loading":
+      return "Cintasign Loading Sheet"
+    case "lowbed-stepdeck-trailer":
+      return "Lowbed And Step Deck Trailer Pre-Use Inspection Checklist"
     default:
       return type
   }
@@ -1046,6 +1293,12 @@ function getDocumentDetails(type: string): { ref: string; rev: string; date: str
       return { ref: "HSEMS/8.1.9/REG/014", rev: "2", date: "27.03.2020" }
     case "cintasign-shorthaul":
       return { ref: "CINT/LOG/001", rev: "1", date: "01.01.2025" }
+    case "cintasign-harvesting":
+      return { ref: "CINT/HARV/001", rev: "1", date: "01.03.2025" }
+    case "cintasign-loading":
+      return { ref: "CINT/LOAD/001", rev: "1", date: "01.03.2025" }
+    case "lowbed-stepdeck-trailer":
+      return { ref: "HSEMS/8.1.19/REG/021", rev: "1", date: "01.03.2025" }
     default:
       return { ref: "HSEMS/8.1.19/REG/000", rev: "0", date: "01.01.2020" }
   }
@@ -1180,7 +1433,7 @@ export function exportSingleSubmissionToCSV(sub: Submission): void {
 }
 
 // ============================================================================
-// PDF EXPORT – with fixes for Cintasign Shorthaul, icon fallback, and defect box spacing
+// PDF EXPORT – with support for Cintasign and lowbed‑stepdeck forms
 // ============================================================================
 export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   const { default: jsPDF } = await import("jspdf")
@@ -1277,8 +1530,14 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
         key === "partsTotal" ||
         key === "labourTotal" ||
         key === "grandTotal" ||
-        key === "fleetEntries" ||      // 👈 exclude arrays to avoid [object Object]
-        key === "breakdownEntries"
+        // Exclude Cintasign operation‑specific fields
+        key === "fleetEntries" ||
+        key === "breakdownEntries" ||
+        key === "entries" ||
+        key === "operator" ||      // top‑level loading supervisor
+        key === "fleetNo" ||       // top‑level loading fleet
+        key === "shift" ||         // top‑level loading shift
+        key === "unit"             // Cintasign unit (already in common)
       ) continue
       fieldRows.push([formatFieldKey(key), String(value) || "-"])
     }
@@ -1593,7 +1852,349 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
       y = (doc as any).lastAutoTable.finalY + 15;
     }
 
-    // Skip the remaining sections (defects, signature) for this form type
+  } else if ((sub.formType as string) === "cintasign-harvesting") {
+    // ----- CINTASIGN HARVESTING: render harvesting fleet and breakdown tables -----
+    const data = sub.data as any;
+
+    // Harvesting fleet entries table
+    if (Array.isArray(data.fleetEntries) && data.fleetEntries.length > 0) {
+      if (y > pageHeight - 70) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(34, 100, 54);
+      doc.text("Harvesting Fleet Details", 14, y);
+      y += 5;
+
+      const fleetHeaders = ["Fleet No", "Operator", "Shift", "Compartment", "Tree Volume", "Trees Debarked", "Total Tons", "Open", "Close", "Worked", "Tons/hr", "Trees/hr"];
+      const fleetRows = data.fleetEntries.map((entry: any) => {
+        return [
+          entry.fleetNo !== undefined ? String(entry.fleetNo) : '',
+          entry.operator !== undefined ? String(entry.operator) : '',
+          entry.shift !== undefined ? String(entry.shift) : '',
+          entry.compartment !== undefined ? String(entry.compartment) : '',
+          entry.treeVolume !== undefined ? String(entry.treeVolume) : '',
+          entry.treesDebarked !== undefined ? String(entry.treesDebarked) : '',
+          entry.totalTons !== undefined ? String(entry.totalTons) : '',
+          entry.hoursOpen !== undefined ? String(entry.hoursOpen) : '',
+          entry.hoursClose !== undefined ? String(entry.hoursClose) : '',
+          entry.hoursWorked !== undefined ? String(entry.hoursWorked) : '',
+          entry.tonsPerHour !== undefined ? String(entry.tonsPerHour) : '',
+          entry.treesPerHour !== undefined ? String(entry.treesPerHour) : '',
+        ];
+      });
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [fleetHeaders],
+        body: fleetRows,
+        theme: 'grid',
+        headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 7, cellPadding: 2 },
+        margin: { left: 14, right: 14 },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // Breakdown entries table
+    if (Array.isArray(data.breakdownEntries) && data.breakdownEntries.length > 0) {
+      if (y > pageHeight - 70) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(34, 100, 54);
+      doc.text("Breakdown Hours & Details", 14, y);
+      y += 5;
+
+      const breakdownHeaders = ["Machine ID", "Operator", "Stop", "Start", "Details"];
+      const breakdownRows = data.breakdownEntries.map((entry: any) => {
+        return [
+          entry.machineId !== undefined ? String(entry.machineId) : '',
+          entry.operator !== undefined ? String(entry.operator) : '',
+          entry.stop !== undefined ? String(entry.stop) : '',
+          entry.start !== undefined ? String(entry.start) : '',
+          entry.details !== undefined ? String(entry.details) : '',
+        ];
+      });
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [breakdownHeaders],
+        body: breakdownRows,
+        theme: 'grid',
+        headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 7, cellPadding: 2 },
+        margin: { left: 14, right: 14 },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+  } else if ((sub.formType as string) === "cintasign-loading") {
+    // ----- CINTASIGN LOADING: render loading supervisor and entries table -----
+    const data = sub.data as any;
+
+    // Top-level fields (Operator, Fleet No, Shift)
+    if (y > pageHeight - 70) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(34, 100, 54);
+    doc.text("Loading Supervisor & Fleet", 14, y);
+    y += 5;
+
+    (doc as any).autoTable({
+      startY: y,
+      body: [
+        ["Operator:", data.operator || ''],
+        ["Fleet No:", data.fleetNo || ''],
+        ["Shift:", data.shift || ''],
+      ],
+      theme: 'plain',
+      styles: { fontSize: 8, cellPadding: 2 },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 15;
+
+    // Loading entries table
+    if (Array.isArray(data.entries) && data.entries.length > 0) {
+      if (y > pageHeight - 70) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(34, 100, 54);
+      doc.text("Loading Details", 14, y);
+      y += 5;
+
+      const entryHeaders = ["Delivery Note No", "Comp No", "Transport Company", "Long Haul Reg", "Driver Name"];
+      const entryRows = data.entries.map((entry: any) => {
+        return [
+          entry.deliveryNoteNo !== undefined ? String(entry.deliveryNoteNo) : '',
+          entry.compNo !== undefined ? String(entry.compNo) : '',
+          entry.transportCompany !== undefined ? String(entry.transportCompany) : '',
+          entry.longHaulReg !== undefined ? String(entry.longHaulReg) : '',
+          entry.driverName !== undefined ? String(entry.driverName) : '',
+        ];
+      });
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [entryHeaders],
+        body: entryRows,
+        theme: 'grid',
+        headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 7, cellPadding: 2 },
+        margin: { left: 14, right: 14 },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    } else if ((sub.formType as string) === "lowbed-stepdeck-trailer") {
+    // ----- LOWBED STEPDECK TRAILER: grouped sections with icons (like excavator-harvester) -----
+    if (!hasItems(sub.data)) {
+      console.warn("No items found for lowbed-stepdeck-trailer");
+    } else {
+      const data = sub.data; // now narrowed to WithItems
+
+      // Collect all unique icon filenames needed for this form
+      const iconFilenames: string[] = [];
+      for (const section of lowbedStepdeckSections) {
+        for (const item of section.items) {
+          const compositeKey = `${section.title}||${item}`;
+          const iconFile = lowbedStepdeckItemIconMap[compositeKey] || FALLBACK_ICON;
+          iconFilenames.push(iconFile);
+        }
+      }
+      const uniqueIconFiles = Array.from(new Set(iconFilenames));
+      const iconBase64Map = await preloadIcons(uniqueIconFiles);
+
+      for (const section of lowbedStepdeckSections) {
+        const sectionItems = section.items.filter((item: string): boolean => 
+          item in data.items
+        )
+        if (sectionItems.length === 0) continue
+
+        if (y > pageHeight - 70) {
+          doc.addPage()
+          y = 20
+        }
+
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(34, 100, 54)
+        doc.text(section.title, 14, y)
+        y += 5
+
+        const splitIndex = Math.floor(sectionItems.length / 2)
+        const firstHalf: string[] = sectionItems.slice(0, splitIndex)
+        const secondHalf: string[] = sectionItems.slice(splitIndex)
+
+        // Build table rows: all items in order (with empty middle column for icons)
+        const tableRows: any[] = []
+
+        firstHalf.forEach((item: string): void => {
+          tableRows.push([
+            item,
+            '',
+            statusLabel(data.items[item] as CheckStatus)
+          ])
+        })
+
+        secondHalf.forEach((item: string): void => {
+          tableRows.push([
+            item,
+            '',
+            statusLabel(data.items[item] as CheckStatus)
+          ])
+        })
+
+        ;(doc as any).autoTable({
+          startY: y,
+          head: [['Inspection Item', '', 'Status']],
+          body: tableRows,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [34, 100, 54],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 8,
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 4,
+            lineColor: [200, 200, 200],
+            lineWidth: 0.2,
+          },
+          columnStyles: {
+            0: { cellWidth: 110, fontStyle: 'bold' },
+            1: { cellWidth: 30, halign: 'center' },
+            2: { cellWidth: 30, halign: 'center' }
+          },
+          margin: { left: 20, right: 20 },
+          didParseCell: (data: Record<string, any>): void => {
+            if (data.section === 'body') {
+              data.cell.minHeight = 20;
+            }
+            if (data.section === 'body' && data.column.index === 2) {
+              const val = data.row.raw[2] as string
+              if (val === 'Defect') {
+                data.cell.styles.textColor = [220, 50, 50]
+                data.cell.styles.fontStyle = 'bold'
+              } else if (val === 'OK') {
+                data.cell.styles.textColor = [34, 139, 34]
+              } else if (val === 'N/A') {
+                data.cell.styles.textColor = [100, 100, 100]
+              }
+            }
+            if (data.section === 'body' && data.column.index === 1) {
+              data.cell.styles.lineWidth = 0;
+            }
+          },
+          didDrawCell: (cellData: any): void => {
+            if (cellData.section === 'body' && cellData.column.index === 1) {
+              const item = cellData.row.raw[0] as string;
+              const compositeKey = `${section.title}||${item}`;
+              const iconFile = lowbedStepdeckItemIconMap[compositeKey] || FALLBACK_ICON;
+              const base64 = iconBase64Map.get(iconFile);
+              if (!base64) return;
+
+              try {
+                const cellWidth = cellData.cell.width;
+                const cellHeight = cellData.cell.height;
+                const maxImgSize = Math.min(cellWidth, cellHeight) - 4;
+                const imgSize = Math.min(25, maxImgSize);
+                const x = cellData.cell.x + (cellWidth - imgSize) / 2;
+                const y = cellData.cell.y + (cellHeight - imgSize) / 2;
+                doc.addImage(base64, 'PNG', x, y, imgSize, imgSize);
+              } catch (e) {
+                console.error(`Failed to draw icon for ${item}`, e);
+              }
+            }
+          }
+        })
+
+        y = (doc as any).lastAutoTable.finalY + 15;
+      }
+    }
+
+    // ----- Defect Details for lowbed-stepdeck -----
+    if (hasDefectDetails(sub.data) && sub.data.defectDetails) {
+      y += 5;
+      if (y > pageHeight - 50) {
+        doc.addPage()
+        y = 20
+      }
+      doc.setFontSize(10)
+      doc.setTextColor(220, 50, 50)
+      doc.text("Defect Details:", 14, y)
+      y += 7
+      doc.setFontSize(8)
+      doc.setTextColor(60)
+      const lines: string[] = doc.splitTextToSize(sub.data.defectDetails, pageWidth - 28)
+      doc.text(lines, 14, y)
+      y += lines.length * 5 + 10
+    }
+
+    // ----- Signature for lowbed-stepdeck -----
+    if (hasSignature(sub.data) && sub.data.signature) {
+      if (y > pageHeight - 70) {
+        doc.addPage()
+        y = 20
+      }
+
+      const boxX = 14
+      const boxY = y - 5
+      const boxWidth = 100
+      const boxHeight = 30
+
+      doc.setFillColor(250, 250, 250)
+      doc.rect(boxX, boxY, boxWidth, boxHeight, 'F')
+      doc.setDrawColor(180, 180, 180)
+      doc.setLineWidth(0.5)
+      doc.rect(boxX, boxY, boxWidth, boxHeight, 'S')
+
+      doc.setFontSize(9)
+      doc.setTextColor(0, 128, 0)
+      doc.setFont('helvetica', 'bold')
+      doc.text("Signature", boxX, boxY - 4)
+      doc.setFont('helvetica', 'normal')
+
+      const signature = sub.data.signature
+      if (signature && typeof signature === 'string' && signature.startsWith('data:image')) {
+        try {
+          const imgSize = Math.min(boxHeight - 8, boxWidth - 8)
+          const imgX = boxX + (boxWidth - imgSize) / 2
+          const imgY = boxY + (boxHeight - imgSize) / 2
+          doc.addImage(signature, 'PNG', imgX, imgY, imgSize, imgSize)
+        } catch (error) {
+          console.error('Failed to add signature image, falling back to text', error)
+          doc.setFontSize(9)
+          doc.setFont("helvetica", "italic")
+          doc.setTextColor(0, 128, 0)
+          doc.text("[Signature image failed to load]", boxX + 5, boxY + boxHeight / 2 + 3)
+          doc.setFont("helvetica", "normal")
+        }
+      } else {
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "italic")
+        doc.setTextColor(0, 128, 0)
+        const sigText = signature || "-"
+        doc.text(sigText, boxX + 5, boxY + boxHeight / 2 + 3)
+        doc.setFont("helvetica", "normal")
+      }
+      y += boxHeight + 15
+    }
+
   } else if (sub.formType === "vehicle-job-card") {
     // ----- VEHICLE JOB CARD: professional layout matching the provided PDF -----
     const data = sub.data as any;

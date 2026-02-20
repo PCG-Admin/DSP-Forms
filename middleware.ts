@@ -1,44 +1,107 @@
-﻿import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { getIronSession } from 'iron-session';
-import { sessionOptions, SessionData } from './lib/session';
+﻿import { createServerClient } from '@supabase/ssr'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-// Routes that don't require authentication
-const publicRoutes = ['/login'];
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          const cookie = req.cookies.get(name)?.value
+          console.log(`[Middleware] Getting cookie ${name}:`, cookie ? 'exists' : 'missing')
+          return cookie
+        },
+        set(name: string, value: string, options: any) {
+          console.log(`[Middleware] Setting cookie ${name}`)
+          res.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: any) {
+          console.log(`[Middleware] Removing cookie ${name}`)
+          res.cookies.set({ name, value: '', ...options })
+        },
+      },
+    }
+  )
 
-export async function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
+  const { data: { user }, error } = await supabase.auth.getUser()
+  console.log(`[Middleware] Path: ${req.nextUrl.pathname}`)
+  console.log(`[Middleware] User from getUser:`, user?.email || 'none')
+  if (error) console.error('[Middleware] getUser error:', error)
 
-  // Allow public routes
-  if (publicRoutes.includes(path)) {
-    return NextResponse.next();
+  const path = req.nextUrl.pathname
+
+  // Public routes (no auth required)
+  if (path === '/login') {
+    // If user already logged in, redirect based on role/brand
+    if (user) {
+      const { data: userData, error: dbError } = await supabase
+        .from('users')
+        .select('role, brand')
+        .eq('id', user.id)
+        .single()
+
+      if (dbError) {
+        console.error('[Middleware] DB error on /login:', dbError)
+        return res // let them stay on login if DB fails
+      }
+
+      if (userData) {
+        if (userData.role === 'admin') {
+          return NextResponse.redirect(new URL('/admin', req.url))
+        }
+        if (!userData.brand) {
+          return NextResponse.redirect(new URL('/brand-select', req.url))
+        }
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+    }
+    return res
   }
 
-  // Get session
-  const response = NextResponse.next();
-  const session = await getIronSession<SessionData>(request, response, sessionOptions);
-
-  // If not logged in, redirect to login
-  if (!session.isLoggedIn) {
-    const url = new URL('/login', request.url);
-    return NextResponse.redirect(url);
+  // All other routes require authentication
+  if (!user) {
+    console.log(`[Middleware] No user, redirecting to /login from ${path}`)
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Role-based access
+  // Fetch user data for protected routes
+  const { data: userData, error: dbError } = await supabase
+    .from('users')
+    .select('role, brand')
+    .eq('id', user.id)
+    .single()
+
+  if (dbError) {
+    console.error('[Middleware] DB fetch error:', dbError)
+    // If DB fails, maybe still allow them to try brand-select to recover
+    if (path === '/brand-select') return res
+    return NextResponse.redirect(new URL('/brand-select', req.url))
+  }
+
+  // Admin route protection
   if (path.startsWith('/admin')) {
-    if (session.role !== 'admin') {
-      // Admin route but user is not admin → redirect to home
-      const url = new URL('/', request.url);
-      return NextResponse.redirect(url);
+    if (userData.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+    return res
+  }
+
+  // Regular users: ensure they have a brand before accessing home
+  if (userData.role !== 'admin') {
+    if (!userData.brand && path !== '/brand-select') {
+      return NextResponse.redirect(new URL('/brand-select', req.url))
+    }
+    if (userData.brand && path === '/brand-select') {
+      return NextResponse.redirect(new URL('/', req.url))
     }
   }
 
-  // For home page, both roles are allowed – proceed
-  return response;
+  return res
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|images).*)',
-  ],
-};
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images).*)'],
+}

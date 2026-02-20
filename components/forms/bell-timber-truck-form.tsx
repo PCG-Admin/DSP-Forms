@@ -14,7 +14,7 @@ import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { BrandLogo } from '@/components/brand-logo';
+import { BrandLogo } from '@/components/brand-logo'
 
 // ============================================================================
 // INSPECTION ITEMS – exactly as they appear in the Bell Timber Truck PDF
@@ -146,7 +146,11 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   )
 }
 
-export function BellTimberTruckForm() {
+interface BellTimberTruckFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -228,7 +232,7 @@ export function BellTimberTruckForm() {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({
           formType: "bell-timber-truck",
           formTitle: "Bell Timber Truck Pre-Shift Checklist",
@@ -253,7 +257,8 @@ export function BellTimberTruckForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            {/* Pass the brand prop to BrandLogo */}
+            <BrandLogo width={160} height={50} brand={brand} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Bell Timber Truck Pre-Shift Checklist</CardTitle>

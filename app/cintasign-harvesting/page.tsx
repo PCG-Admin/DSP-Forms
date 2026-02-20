@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { ExcavatorHarvesterForm } from "@/components/forms/excavator-harvester-form"
-import { SiteHeader } from "@/components/site-header"
+import { CintasignHarvestingForm } from '@/components/forms/cintasign-harvesting-form'
+import { SiteHeader } from '@/components/site-header'
 
 export const metadata = {
-  title: "Excavator Harvester Pre-Shift Inspection | HSE",
-  description: "Complete your pre-shift excavator harvester inspection checklist.",
+  title: "Cintasign Harvesting | Cintasign HSE",
+  description: "Daily log for harvesting operations including fleet details and breakdowns.",
 }
 
-export default async function ExcavatorHarvesterPage() {
+export default async function CintasignHarvestingPage() {
   const supabase = createClient()
 
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -29,7 +29,7 @@ export default async function ExcavatorHarvesterPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader role="user" />
-      <ExcavatorHarvesterForm brand={userData.brand} />
+      <CintasignHarvestingForm brand={userData.brand} />
     </div>
   )
 }

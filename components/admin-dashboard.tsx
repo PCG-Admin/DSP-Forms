@@ -126,7 +126,7 @@ function BrandBadge({ brand }: { brand?: string }) {
   );
 }
 
-// Form type label
+// Form type label – now includes all 24 forms
 function formTypeLabel(type: string) {
   switch (type) {
     case "light-delivery":
@@ -137,6 +137,8 @@ function formTypeLabel(type: string) {
       return "Excavator Harvester"
     case "lowbed-trailer":
       return "Lowbed & Roll Back Trailer"
+    case "lowbed-stepdeck-trailer":
+      return "Lowbed & Step Deck Trailer"
     case "mechanic-ldv":
       return "Mechanic LDV"
     case "personal-labour-carrier":
@@ -171,12 +173,16 @@ function formTypeLabel(type: string) {
       return "Diesel Cart Trailer"
     case "cintasign-shorthaul":
       return "Cintasign Shorthaul"
+    case "cintasign-harvesting":
+      return "Cintasign Harvesting"
+    case "cintasign-loading":
+      return "Cintasign Loading"
     default:
       return type
   }
 }
 
-// Form icon mapping
+// Form icon mapping – now includes all 24 forms
 function getFormIcon(type: string) {
   switch (type) {
     case "light-delivery":
@@ -186,6 +192,8 @@ function getFormIcon(type: string) {
     case "excavator-harvester":
       return <Trees className="h-4 w-4 text-muted-foreground" />
     case "lowbed-trailer":
+      return <Container className="h-4 w-4 text-muted-foreground" />
+    case "lowbed-stepdeck-trailer":
       return <Container className="h-4 w-4 text-muted-foreground" />
     case "mechanic-ldv":
       return <Wrench className="h-4 w-4 text-muted-foreground" />
@@ -221,6 +229,10 @@ function getFormIcon(type: string) {
       return <Container className="h-4 w-4 text-muted-foreground" />
     case "cintasign-shorthaul":
       return <Truck className="h-4 w-4 text-muted-foreground" />
+    case "cintasign-harvesting":
+      return <Trees className="h-4 w-4 text-muted-foreground" />
+    case "cintasign-loading":
+      return <Container className="h-4 w-4 text-muted-foreground" />
     default:
       return <FileText className="h-4 w-4 text-muted-foreground" />
   }
@@ -234,7 +246,7 @@ function formatFieldKey(key: string): string {
 }
 
 // ============================================================================
-// REPORTS COMPONENT – all charts live here (with all 21 form types)
+// REPORTS COMPONENT – updated for 24 form types with proper spacing
 // ============================================================================
 function AdminReports({ submissions }: { submissions: Submission[] }) {
   const [dateRange, setDateRange] = useState<"7" | "30" | "all">("30");
@@ -270,7 +282,7 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
     ];
   }, [filteredSubs]);
 
-  // 3. Form type distribution – ALL forms (21)
+  // 3. Form type distribution – ALL forms (24)
   const formTypeData = useMemo(() => {
     const map = new Map<string, number>();
     filteredSubs.forEach(sub => {
@@ -293,13 +305,13 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
     ];
   }, [filteredSubs]);
 
-  // Colors for form type chart (21 distinct colors)
+  // Colors for form type chart (24 distinct colors)
   const formColors = [
     "#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c",
     "#d0ed57", "#8dd1e1", "#b0e57c", "#f5b7b1", "#d7bde2",
     "#f7dc6f", "#85c1e9", "#f5cba0", "#c39bd3", "#76d7c4",
     "#ec7063", "#f8c471", "#f0b27a", "#a569bd", "#5dade2",
-    "#48c9b0"
+    "#48c9b0", "#e67e22", "#2ecc71", "#e74c3c"
   ];
 
   return (
@@ -403,29 +415,29 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
           </CardContent>
         </Card>
 
-        {/* All Form Types – now includes ALL 21 forms */}
-        <Card className="lg:col-span-2"> {/* Full width on large screens */}
+        {/* All Form Types – now includes ALL 24 forms */}
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <ClipboardList className="h-4 w-4" />
-              All Form Types (21)
+              All Form Types (24)
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-[500px]"> {/* Increased height for 21 items */}
+          <CardContent className="h-[600px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={formTypeData}
                 layout="vertical"
-                margin={{ left: 200, right: 20, top: 20, bottom: 20 }} // More left space
+                margin={{ left: 220, right: 20, top: 20, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis
                   dataKey="name"
                   type="category"
-                  width={180} // Wide enough for long names
+                  width={200}
                   tick={{ fontSize: 10 }}
-                  interval={0} // Show all labels
+                  interval={0}
                 />
                 <Tooltip />
                 <Legend />
@@ -487,7 +499,7 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
 }
 
 // ============================================================================
-// PREVIEW COMPONENT (unchanged)
+// PREVIEW COMPONENT – with type assertions to fix TypeScript errors
 // ============================================================================
 function SubmissionPreview({ submission }: { submission: Submission }) {
   const logoPath = submission.brand === 'cintasign' 
@@ -496,7 +508,8 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
   const logoAlt = submission.brand === 'cintasign' ? 'Cintasign Logo' : 'Ringomode DSP Logo';
 
   const renderFleetEntries = () => {
-    if (submission.formType !== 'cintasign-shorthaul') return null;
+    const formType = submission.formType as string;
+    if (formType !== 'cintasign-shorthaul' && formType !== 'cintasign-harvesting') return null;
     const data = submission.data as any;
     if (!data.fleetEntries || data.fleetEntries.length === 0) return null;
     return (
@@ -509,33 +522,71 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-muted">
-                  <th className="p-2 text-left">Fleet No</th>
-                  <th className="p-2 text-left">Operator</th>
-                  <th className="p-2 text-left">Shift</th>
-                  <th className="p-2 text-left">Compartment</th>
-                  <th className="p-2 text-left">Loads</th>
-                  <th className="p-2 text-left">Est Tons</th>
-                  <th className="p-2 text-left">Open</th>
-                  <th className="p-2 text-left">Close</th>
-                  <th className="p-2 text-left">Worked</th>
-                  <th className="p-2 text-left">Loads/hr</th>
-                  <th className="p-2 text-left">Tons/hr</th>
+                  {formType === 'cintasign-harvesting' ? (
+                    <>
+                      <th className="p-2 text-left">Fleet No</th>
+                      <th className="p-2 text-left">Operator</th>
+                      <th className="p-2 text-left">Shift</th>
+                      <th className="p-2 text-left">Compartment</th>
+                      <th className="p-2 text-left">Tree Volume</th>
+                      <th className="p-2 text-left">Trees Debarked</th>
+                      <th className="p-2 text-left">Total Tons</th>
+                      <th className="p-2 text-left">Open</th>
+                      <th className="p-2 text-left">Close</th>
+                      <th className="p-2 text-left">Worked</th>
+                      <th className="p-2 text-left">Tons/hr</th>
+                      <th className="p-2 text-left">Trees/hr</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="p-2 text-left">Fleet No</th>
+                      <th className="p-2 text-left">Operator</th>
+                      <th className="p-2 text-left">Shift</th>
+                      <th className="p-2 text-left">Compartment</th>
+                      <th className="p-2 text-left">Loads</th>
+                      <th className="p-2 text-left">Est Tons</th>
+                      <th className="p-2 text-left">Open</th>
+                      <th className="p-2 text-left">Close</th>
+                      <th className="p-2 text-left">Worked</th>
+                      <th className="p-2 text-left">Loads/hr</th>
+                      <th className="p-2 text-left">Tons/hr</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {data.fleetEntries.map((entry: any, idx: number) => (
                   <tr key={idx} className="border-b">
-                    <td className="p-2">{entry.fleetNo}</td>
-                    <td className="p-2">{entry.operator}</td>
-                    <td className="p-2">{entry.shift}</td>
-                    <td className="p-2">{entry.compartment}</td>
-                    <td className="p-2">{entry.noOfLoads}</td>
-                    <td className="p-2">{entry.estTons}</td>
-                    <td className="p-2">{entry.hoursOpen}</td>
-                    <td className="p-2">{entry.hoursClose}</td>
-                    <td className="p-2">{entry.hoursWorked}</td>
-                    <td className="p-2">{entry.loadsPerHour}</td>
-                    <td className="p-2">{entry.tonsPerHour}</td>
+                    {formType === 'cintasign-harvesting' ? (
+                      <>
+                        <td className="p-2">{entry.fleetNo}</td>
+                        <td className="p-2">{entry.operator}</td>
+                        <td className="p-2">{entry.shift}</td>
+                        <td className="p-2">{entry.compartment}</td>
+                        <td className="p-2">{entry.treeVolume}</td>
+                        <td className="p-2">{entry.treesDebarked}</td>
+                        <td className="p-2">{entry.totalTons}</td>
+                        <td className="p-2">{entry.hoursOpen}</td>
+                        <td className="p-2">{entry.hoursClose}</td>
+                        <td className="p-2">{entry.hoursWorked}</td>
+                        <td className="p-2">{entry.tonsPerHour}</td>
+                        <td className="p-2">{entry.treesPerHour}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="p-2">{entry.fleetNo}</td>
+                        <td className="p-2">{entry.operator}</td>
+                        <td className="p-2">{entry.shift}</td>
+                        <td className="p-2">{entry.compartment}</td>
+                        <td className="p-2">{entry.noOfLoads}</td>
+                        <td className="p-2">{entry.estTons}</td>
+                        <td className="p-2">{entry.hoursOpen}</td>
+                        <td className="p-2">{entry.hoursClose}</td>
+                        <td className="p-2">{entry.hoursWorked}</td>
+                        <td className="p-2">{entry.loadsPerHour}</td>
+                        <td className="p-2">{entry.tonsPerHour}</td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -547,7 +598,8 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
   };
 
   const renderBreakdownEntries = () => {
-    if (submission.formType !== 'cintasign-shorthaul') return null;
+    const formType = submission.formType as string;
+    if (formType !== 'cintasign-shorthaul' && formType !== 'cintasign-harvesting') return null;
     const data = submission.data as any;
     if (!data.breakdownEntries || data.breakdownEntries.length === 0) return null;
     return (
@@ -575,6 +627,45 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
                     <td className="p-2">{entry.stop}</td>
                     <td className="p-2">{entry.start}</td>
                     <td className="p-2">{entry.details}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderLoadingEntries = () => {
+    if ((submission.formType as string) !== 'cintasign-loading') return null;
+    const data = submission.data as any;
+    if (!data.entries || data.entries.length === 0) return null;
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-foreground">Loading Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="p-2 text-left">Delivery Note No</th>
+                  <th className="p-2 text-left">Comp No</th>
+                  <th className="p-2 text-left">Transport Company</th>
+                  <th className="p-2 text-left">Long Haul Reg</th>
+                  <th className="p-2 text-left">Driver Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.entries.map((entry: any, idx: number) => (
+                  <tr key={idx} className="border-b">
+                    <td className="p-2">{entry.deliveryNoteNo}</td>
+                    <td className="p-2">{entry.compNo}</td>
+                    <td className="p-2">{entry.transportCompany}</td>
+                    <td className="p-2">{entry.longHaulReg}</td>
+                    <td className="p-2">{entry.driverName}</td>
                   </tr>
                 ))}
               </tbody>
@@ -640,7 +731,8 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
                   key !== "defectDetails" &&
                   key !== "signature" &&
                   key !== "fleetEntries" &&
-                  key !== "breakdownEntries"
+                  key !== "breakdownEntries" &&
+                  key !== "entries"
               )
               .map(([key, value]) => (
                 <div key={key} className="flex flex-col">
@@ -654,7 +746,34 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
         </CardContent>
       </Card>
 
-      {submission.formType === "cintasign-shorthaul" ? (
+      {(submission.formType as string) === "cintasign-loading" ? (
+        <>
+          {(submission.data as any).operator || (submission.data as any).fleetNo || (submission.data as any).shift ? (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-foreground">Loading Supervisor & Fleet</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">Operator</span>
+                    <p className="text-sm font-medium">{(submission.data as any).operator || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">Fleet No</span>
+                    <p className="text-sm font-medium">{(submission.data as any).fleetNo || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">Shift</span>
+                    <p className="text-sm font-medium">{(submission.data as any).shift || '-'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+          {renderLoadingEntries()}
+        </>
+      ) : (submission.formType as string) === "cintasign-shorthaul" || (submission.formType as string) === "cintasign-harvesting" ? (
         <>
           {renderFleetEntries()}
           {renderBreakdownEntries()}
@@ -710,11 +829,21 @@ function SubmissionPreview({ submission }: { submission: Submission }) {
                 <CardTitle className="text-sm text-foreground">Signature</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="inline-block border-b-2 border-foreground/20 pb-1">
-                  <p className="font-serif text-base italic text-foreground">
-                    {submission.data.signature}
-                  </p>
-                </div>
+                {submission.data.signature.startsWith('data:image') ? (
+                  <Image
+                    src={submission.data.signature}
+                    alt="Signature"
+                    width={200}
+                    height={100}
+                    className="border rounded-md"
+                  />
+                ) : (
+                  <div className="inline-block border-b-2 border-foreground/20 pb-1">
+                    <p className="font-serif text-base italic text-foreground">
+                      {submission.data.signature}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -739,7 +868,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
   const [defectFilter, setDefectFilter] = useState<string>("all")
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [dialogTab, setDialogTab] = useState<string>("preview")
-  const [activeTab, setActiveTab] = useState<string>("submissions") // "submissions" or "analytics"
+  const [activeTab, setActiveTab] = useState<string>("submissions")
 
   const fetchSubmissions = useCallback(async () => {
     setLoading(true)
@@ -766,7 +895,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
     const matchesSearch =
       s.submittedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.formTitle.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = typeFilter === "all" || s.formType === typeFilter
+    const matchesType = typeFilter === "all" || (s.formType as string) === typeFilter
     const matchesDefect =
       defectFilter === "all" ||
       (defectFilter === "defects" && s.hasDefects) ||
@@ -942,6 +1071,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                     <SelectItem value="excavator-loader">Excavator Loader</SelectItem>
                     <SelectItem value="excavator-harvester">Excavator Harvester</SelectItem>
                     <SelectItem value="lowbed-trailer">Lowbed & Roll Back</SelectItem>
+                    <SelectItem value="lowbed-stepdeck-trailer">Lowbed & Step Deck</SelectItem>
                     <SelectItem value="mechanic-ldv">Mechanic LDV</SelectItem>
                     <SelectItem value="personal-labour-carrier">Labour Carrier</SelectItem>
                     <SelectItem value="ponsse-bison">Ponsse Bison</SelectItem>
@@ -959,6 +1089,8 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                     <SelectItem value="dezzi-timber-truck">Dezzi Timber</SelectItem>
                     <SelectItem value="diesel-cart-trailer">Diesel Cart</SelectItem>
                     <SelectItem value="cintasign-shorthaul">Cintasign Shorthaul</SelectItem>
+                    <SelectItem value="cintasign-harvesting">Cintasign Harvesting</SelectItem>
+                    <SelectItem value="cintasign-loading">Cintasign Loading</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={defectFilter} onValueChange={setDefectFilter}>

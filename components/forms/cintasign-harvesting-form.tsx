@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React, { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -15,26 +15,40 @@ import {
   CINTASIGN_UNITS,
   SHIFTS, 
   FARMS, 
-  SHORTHAUL_OPERATORS, 
-  SHORTHAUL_FLEET_NUMBERS 
+  HARVESTER_OPERATORS, 
+  HARVESTER_FLEET_NUMBERS 
 } from "@/lib/cintasign-constants"
 import type { CintasignUnit } from "@/lib/cintasign-constants"
-import type { FleetEntry, BreakdownEntry } from "@/lib/types"
 
-interface CintasignShorthaulFormProps {
+interface HarvestingEntry {
+    fleetNo: string;
+    operator: string;
+    shift: string;
+    compartment: string;
+    treeVolume: string;
+    treesDebarked: string;
+    totalTons: string;
+    hoursOpen: string;
+    hoursClose: string;
+    hoursWorked: string;
+    tonsPerHour: string;
+    treesPerHour: string;
+}
+
+interface CintasignHarvestingFormProps {
   brand: 'ringomode' | 'cintasign'
 }
 
-export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
+export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps) {
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split("T")[0],
         day: "",
         farm: "",
-        automaticNumber: "8826",
-        unit: "CNT2" as CintasignUnit,
+        automaticNumber: "9008",
+        unit: "CNT1" as CintasignUnit,
         fleetEntries: Array(8).fill(null).map(() => ({
-            fleetNo: "", operator: "", shift: "", compartment: "", noOfLoads: "", estTons: "",
-            hoursOpen: "", hoursClose: "", hoursWorked: "", loadsPerHour: "", tonsPerHour: ""
+            fleetNo: "", operator: "", shift: "", compartment: "", treeVolume: "", treesDebarked: "", totalTons: "",
+            hoursOpen: "", hoursClose: "", hoursWorked: "", tonsPerHour: "", treesPerHour: ""
         })),
         breakdownEntries: Array(8).fill(null).map((_, i) => ({
             machineId: ((i + 1) * 10).toString(),
@@ -45,21 +59,21 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
 
-    // Calculate grand total of all "EST. Tons" fields
-    const grandTotalEstTons = useMemo(() => {
+    // Calculate grand total of all "Total Tons" fields
+    const grandTotalTons = useMemo(() => {
         return formData.fleetEntries.reduce((sum, entry) => {
-            const tons = parseFloat(entry.estTons) || 0;
+            const tons = parseFloat(entry.totalTons) || 0;
             return sum + tons;
         }, 0);
     }, [formData.fleetEntries]);
 
-    const handleFleetChange = (index: number, field: keyof FleetEntry, value: string) => {
+    const handleFleetChange = (index: number, field: keyof HarvestingEntry, value: string) => {
         const newFleet = [...formData.fleetEntries]
         newFleet[index] = { ...newFleet[index], [field]: value }
         setFormData(prev => ({ ...prev, fleetEntries: newFleet }))
     }
 
-    const handleBreakdownChange = (index: number, field: keyof BreakdownEntry, value: string) => {
+    const handleBreakdownChange = (index: number, field: string, value: string) => {
         const newBreakdown = [...formData.breakdownEntries]
         newBreakdown[index] = { ...newBreakdown[index], [field]: value }
         setFormData(prev => ({ ...prev, breakdownEntries: newBreakdown }))
@@ -70,9 +84,9 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
         setIsSubmitting(true)
 
         const submissionData = {
-            formType: "cintasign-shorthaul",
-            formTitle: "Cintasign Shorthaul Trip Sheet",
-            submittedBy: "Trip Manager",
+            formType: "cintasign-harvesting",
+            formTitle: "Cintasign Harvesting Sheet",
+            submittedBy: "Harvest Manager",
             hasDefects: false,
             brand: brand, // ✅ use prop
             data: formData,
@@ -89,7 +103,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
             if (!response.ok) throw new Error("Submission failed")
 
             setIsSubmitted(true)
-            toast.success("Shorthaul report submitted successfully!")
+            toast.success("Harvesting report submitted successfully!")
         } catch (error) {
             toast.error("An error occurred. Please try again.")
         } finally {
@@ -109,7 +123,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-muted-foreground">
-                            Your Cintasign Shorthaul report has been recorded.
+                            Your Cintasign Harvesting report has been recorded.
                         </p>
                         <div className="flex flex-col gap-2">
                             <Button variant="outline" onClick={() => window.location.href = "/"} className="w-full">
@@ -123,7 +137,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="mx-auto max-w-6xl space-y-6 p-4 pb-12 lg:p-8 lg:pb-16">
+        <form onSubmit={handleSubmit} className="mx-auto max-w-7xl space-y-6 p-4 pb-12 lg:p-8 lg:pb-16">
             <div className="flex items-center gap-3">
                 <Button type="button" variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground">
                     <Link href="/">
@@ -139,20 +153,20 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                         <BrandLogo brand={brand} width={160} height={50} />
                     </div>
                     <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
-                    <CardTitle className="text-2xl text-foreground">Cintasign Shorthaul Trip Sheet</CardTitle>
-                    <CardDescription>Document Ref: CINT/LOG/001 | Rev. 1 | 01.01.2025</CardDescription>
+                    <CardTitle className="text-2xl text-foreground">Cintasign Harvesting Sheet</CardTitle>
+                    <CardDescription>Document Ref: CINT/HARV/001 | Rev. 1 | 01.03.2025</CardDescription>
                 </CardHeader>
             </Card>
 
             <Card className="border-amber-200 bg-amber-50">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-amber-800">
-                        General Instructions for Trip Sheet:
+                        General Instructions for Harvesting:
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-amber-700">
-                        Complete all fleet and breakdown details for the day.
+                        Complete all harvesting fleet and breakdown details for the day.
                     </p>
                 </CardContent>
             </Card>
@@ -160,7 +174,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
             {/* Common Information + Unit */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">Trip Information</CardTitle>
+                    <CardTitle className="text-base">Harvesting Information</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-5">
                     <div className="space-y-2">
@@ -196,23 +210,23 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                 </CardContent>
             </Card>
 
-            {/* Fleet Entries */}
+            {/* Harvesting Fleet Entries */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">Fleet Details</CardTitle>
-                    <CardDescription>Enter data for up to 8 fleet units</CardDescription>
+                    <CardTitle className="text-base">Harvesting Fleet Details</CardTitle>
+                    <CardDescription>Enter data for up to 8 harvesters</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                     {formData.fleetEntries.map((entry, idx) => (
                         <div key={idx} className="space-y-4 border-b border-gray-200 pb-6 last:border-none">
-                            <h4 className="text-sm font-semibold text-primary">Unit {idx + 1}</h4>
-                            <div className="grid grid-cols-2 gap-4 md:grid-cols-6">
+                            <h4 className="text-sm font-semibold text-primary">Harvester {idx + 1}</h4>
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-7">
                                 <div className="space-y-2">
                                     <Label className="text-xs">Fleet No</Label>
                                     <Select value={entry.fleetNo} onValueChange={v => handleFleetChange(idx, "fleetNo", v)}>
                                         <SelectTrigger><SelectValue placeholder="Select fleet" /></SelectTrigger>
                                         <SelectContent>
-                                            {SHORTHAUL_FLEET_NUMBERS.map(fn => <SelectItem key={fn} value={fn}>{fn}</SelectItem>)}
+                                            {HARVESTER_FLEET_NUMBERS.map(fn => <SelectItem key={fn} value={fn}>{fn}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -221,7 +235,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                                     <Select value={entry.operator} onValueChange={v => handleFleetChange(idx, "operator", v)}>
                                         <SelectTrigger><SelectValue placeholder="Select operator" /></SelectTrigger>
                                         <SelectContent>
-                                            {SHORTHAUL_OPERATORS.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
+                                            {HARVESTER_OPERATORS.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -239,16 +253,20 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                                     <Input value={entry.compartment} onChange={e => handleFleetChange(idx, "compartment", e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-xs">No Of Loads</Label>
-                                    <Input value={entry.noOfLoads} onChange={e => handleFleetChange(idx, "noOfLoads", e.target.value)} />
+                                    <Label className="text-xs">Tree Volume</Label>
+                                    <Input value={entry.treeVolume} onChange={e => handleFleetChange(idx, "treeVolume", e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-xs">EST. Tons</Label>
+                                    <Label className="text-xs">Trees Debarked</Label>
+                                    <Input value={entry.treesDebarked} onChange={e => handleFleetChange(idx, "treesDebarked", e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Total Tons</Label>
                                     <Input 
                                         type="number" 
                                         step="0.01" 
-                                        value={entry.estTons} 
-                                        onChange={e => handleFleetChange(idx, "estTons", e.target.value)} 
+                                        value={entry.totalTons} 
+                                        onChange={e => handleFleetChange(idx, "totalTons", e.target.value)} 
                                     />
                                 </div>
                             </div>
@@ -266,12 +284,12 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                                     <Input value={entry.hoursWorked} onChange={e => handleFleetChange(idx, "hoursWorked", e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-xs">Loads Per Hour</Label>
-                                    <Input value={entry.loadsPerHour} onChange={e => handleFleetChange(idx, "loadsPerHour", e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
                                     <Label className="text-xs">Tons Per Hour</Label>
                                     <Input value={entry.tonsPerHour} onChange={e => handleFleetChange(idx, "tonsPerHour", e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Trees Per Hour</Label>
+                                    <Input value={entry.treesPerHour} onChange={e => handleFleetChange(idx, "treesPerHour", e.target.value)} />
                                 </div>
                             </div>
                         </div>
@@ -279,12 +297,12 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                 </CardContent>
             </Card>
 
-            {/* Grand Total EST. Tons Summary */}
+            {/* Grand Total Tons Summary */}
             <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="py-4">
                     <div className="flex items-center justify-between text-lg font-semibold">
-                        <span>Grand Total EST. Tons (all units):</span>
-                        <span className="text-primary">{grandTotalEstTons.toFixed(2)}</span>
+                        <span>Grand Total Tons (all harvesters):</span>
+                        <span className="text-primary">{grandTotalTons.toFixed(2)}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -307,7 +325,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                                 <Select value={entry.operator} onValueChange={v => handleBreakdownChange(idx, "operator", v)}>
                                     <SelectTrigger><SelectValue placeholder="Select operator" /></SelectTrigger>
                                     <SelectContent>
-                                        {SHORTHAUL_OPERATORS.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
+                                        {HARVESTER_OPERATORS.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 <Input className="h-9" value={entry.stop} onChange={e => handleBreakdownChange(idx, "stop", e.target.value)} />
@@ -338,10 +356,10 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
             </div>
 
             <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground border-t pt-4">
-                <div><span className="font-semibold">Document Reference</span><br />CINT / LOG / 001</div>
-                <div><span className="font-semibold">Author</span><br />Logistics Manager</div>
+                <div><span className="font-semibold">Document Reference</span><br />CINT / HARV / 001</div>
+                <div><span className="font-semibold">Author</span><br />Harvest Manager</div>
                 <div><span className="font-semibold">Revision</span><br />1</div>
-                <div><span className="font-semibold">Creation Date</span><br />01.01.2025</div>
+                <div><span className="font-semibold">Creation Date</span><br />01.03.2025</div>
             </div>
         </form>
     )

@@ -109,7 +109,14 @@ function SimpleItemRow({ item, value, onChange }: SimpleItemRowProps) {
   )
 }
 
-export function DailyAttachmentChecklistForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface DailyAttachmentChecklistFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function DailyAttachmentChecklistForm({ brand }: DailyAttachmentChecklistFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -203,6 +210,7 @@ export function DailyAttachmentChecklistForm() {
           formTitle: "Daily Attachment Checklist",
           submittedBy: formData.mechanicsName,
           hasDefects,
+          brand: brand, // ✅ use prop
           data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
@@ -222,7 +230,7 @@ export function DailyAttachmentChecklistForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">Daily Attachment Checklist</CardTitle>

@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { ExcavatorHarvesterForm } from "@/components/forms/excavator-harvester-form"
+import { LowbedStepdeckTrailerForm } from "@/components/forms/lowbed-stepdeck-trailer-form"
 import { SiteHeader } from "@/components/site-header"
 
 export const metadata = {
-  title: "Excavator Harvester Pre-Shift Inspection | HSE",
-  description: "Complete your pre-shift excavator harvester inspection checklist.",
+  title: "Lowbed & Step Deck Trailer Pre-Use Inspection | Ringomode HSE",
+  description: "Pre-use inspection checklist for lowbed and step deck trailers.",
 }
 
-export default async function ExcavatorHarvesterPage() {
+export default async function LowbedStepdeckTrailerPage() {
   const supabase = createClient()
 
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -29,7 +29,7 @@ export default async function ExcavatorHarvesterPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader role="user" />
-      <ExcavatorHarvesterForm brand={userData.brand} />
+      <LowbedStepdeckTrailerForm brand={userData.brand} />
     </div>
   )
 }

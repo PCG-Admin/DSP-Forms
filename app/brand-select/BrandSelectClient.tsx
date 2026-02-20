@@ -1,18 +1,135 @@
-'use client';
+'use client'
 
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { setBrand } from '@/lib/brand';
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { createClient } from '@/lib/supabase/client'
+import { Card, CardContent } from '@/components/ui/card'
+import { toast } from 'sonner'
 
-export default function BrandSelectClient() {
-  const router = useRouter();
+export default function BrandSelectPage() {
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
 
-  const handleSelect = (brand: 'ringomode' | 'cintasign') => {
-    setBrand(brand);
-    console.log('Brand selected:', brand);
-    router.push('/');
-  };
+  useEffect(() => {
+    async function checkUser() {
+      console.log('[BrandSelect] Checking user...')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.log('[BrandSelect] No user, redirecting to login')
+        router.push('/login')
+        return
+      }
+
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('brand')
+        .eq('id', user.id)
+        .single()
+
+      if (error) {
+        console.error('[BrandSelect] Error fetching user:', error)
+        toast.error('Failed to load user profile')
+        router.push('/login')
+        return
+      }
+
+      console.log('[BrandSelect] Current user data:', userData)
+
+      if (userData?.brand) {
+        console.log('[BrandSelect] User already has brand, redirecting to home')
+        router.push('/')
+      } else {
+        setLoading(false)
+      }
+    }
+    checkUser()
+  }, [router, supabase])
+
+  const handleSelect = async (brand: 'ringomode' | 'cintasign') => {
+    setSaving(true)
+    console.log(`[BrandSelect] Attempting to set brand to: ${brand}`)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      toast.error('Not authenticated')
+      router.push('/login')
+      return
+    }
+
+    // First, try to update with select to verify
+    const { data, error } = await supabase
+      .from('users')
+      .update({ brand })
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('[BrandSelect] Update error:', error)
+      toast.error(`Failed to set brand: ${error.message}`)
+      setSaving(false)
+      return
+    }
+
+    if (!data) {
+      console.error('[BrandSelect] No data returned – update may have failed silently')
+      toast.error('Brand update failed – check permissions')
+      setSaving(false)
+      return
+    }
+
+    console.log('[BrandSelect] Update returned:', data)
+
+    if (data.brand !== brand) {
+      console.error('[BrandSelect] Brand mismatch:', data.brand, '!=', brand)
+      toast.error('Brand update verification failed')
+      setSaving(false)
+      return
+    }
+
+    // Double-check by fetching again
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('users')
+      .select('brand')
+      .eq('id', user.id)
+      .single()
+
+    if (verifyError) {
+      console.error('[BrandSelect] Verification fetch error:', verifyError)
+      toast.error('Could not verify brand update')
+      setSaving(false)
+      return
+    }
+
+    console.log('[BrandSelect] Verification fetch returned:', verifyData)
+
+    if (verifyData.brand !== brand) {
+      console.error('[BrandSelect] Verification mismatch:', verifyData.brand, '!=', brand)
+      toast.error('Brand verification failed after update')
+      setSaving(false)
+      return
+    }
+
+    toast.success(`Brand set to ${brand}`)
+    console.log('[BrandSelect] All good, redirecting to home')
+
+    // Use a small timeout to ensure the cookie/db propagate
+    setTimeout(() => {
+      router.push('/')
+      router.refresh()
+    }, 500)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -25,7 +142,10 @@ export default function BrandSelectClient() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div onClick={() => handleSelect('ringomode')} className="group cursor-pointer">
+          <div
+            onClick={() => !saving && handleSelect('ringomode')}
+            className={`group cursor-pointer ${saving ? 'opacity-50 pointer-events-none' : ''}`}
+          >
             <Card className="transition-all hover:shadow-lg hover:border-primary/50">
               <CardContent className="flex flex-col items-center justify-center p-8">
                 <div className="relative w-48 h-24 mb-4">
@@ -43,7 +163,10 @@ export default function BrandSelectClient() {
             </Card>
           </div>
 
-          <div onClick={() => handleSelect('cintasign')} className="group cursor-pointer">
+          <div
+            onClick={() => !saving && handleSelect('cintasign')}
+            className={`group cursor-pointer ${saving ? 'opacity-50 pointer-events-none' : ''}`}
+          >
             <Card className="transition-all hover:shadow-lg hover:border-primary/50">
               <CardContent className="flex flex-col items-center justify-center p-8">
                 <div className="relative w-48 h-24 mb-4">
@@ -63,5 +186,5 @@ export default function BrandSelectClient() {
         </div>
       </Card>
     </div>
-  );
+  )
 }

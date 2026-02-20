@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import Cookies from 'js-cookie';
 import React, { useRef, useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -295,7 +294,14 @@ function GroupSection({ title, items, iconSrc, itemState, onItemChange }: GroupS
   )
 }
 
-export function LightDeliveryForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface LightDeliveryFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function LightDeliveryForm({ brand }: LightDeliveryFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -318,7 +324,6 @@ export function LightDeliveryForm() {
     return `LD-${year}${month}${day}-${random}`
   }, [])
 
-  // ✅ Initialise state with the exact strings from sections (or from itemIconMap)
   const [items, setItems] = useState<Record<string, CheckStatus>>(
     Object.fromEntries(allItems.map((item) => [item, null]))
   )
@@ -461,21 +466,6 @@ export function LightDeliveryForm() {
       return
     }
 
-    const brand = Cookies.get('brand') as 'ringomode' | 'cintasign' || 'ringomode';
-
-    try {
-      const userRes = await fetch('/api/user');
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        if (userData.brand && userData.brand !== brand) {
-          toast.error(`You are logged into ${userData.brand} but trying to submit a form for ${brand}. Please log in with the correct account.`);
-          return;
-        }
-      }
-    } catch (error) {
-      console.warn("Could not verify session brand – assuming it's correct.", error);
-    }
-
     setIsSubmitting(true)
 
     try {
@@ -488,7 +478,7 @@ export function LightDeliveryForm() {
           formTitle: "Light Delivery Vehicle Daily Checklist",
           submittedBy: formData.driverName,
           hasDefects,
-          brand,
+          brand: brand, // ✅ use prop
           data: {
             ...formData,
             documentNo,
@@ -528,7 +518,7 @@ export function LightDeliveryForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
           <CardTitle className="text-xl text-foreground">

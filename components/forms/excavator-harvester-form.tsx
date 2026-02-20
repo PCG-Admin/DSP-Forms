@@ -380,7 +380,14 @@ const renderGroupedSection = (
   )
 }
 
-export function ExcavatorHarvesterForm() {
+// ============================================================================
+// PROPS INTERFACE
+// ============================================================================
+interface ExcavatorHarvesterFormProps {
+  brand: 'ringomode' | 'cintasign'
+}
+
+export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -566,12 +573,13 @@ export function ExcavatorHarvesterForm() {
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include",
         body: JSON.stringify({
           formType: "excavator-harvester",
           formTitle: "Excavator Harvester Pre-Shift Inspection Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
+          brand: brand, // ✅ include the brand from props
           data: {
             ...formData,
             documentNo,
@@ -618,7 +626,7 @@ export function ExcavatorHarvesterForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
-            <BrandLogo width={160} height={50} />
+            <BrandLogo brand={brand} width={160} height={50} />
           </div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">
             HSE Management System
