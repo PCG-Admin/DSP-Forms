@@ -220,6 +220,29 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
       })
 
       if (response.ok) {
+        // Fire‑and‑forget webhook call to Make (DocuWare integration)
+        const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+        if (makeWebhookUrl) {
+          fetch(makeWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              formTitle: "Motorised Equipment/Vehicle Job Card",
+              documentNo,
+              brand,
+              submittedBy: formData.driverName,
+              submittedAt: new Date().toISOString(),
+              hasDefects: false,
+              defectDetails: "", // No defect details for this form
+              inspectionData: {
+                ...formData,
+                mechanicSignature,
+                operatorSignature,
+              }, // Full job card data
+            }),
+          }).catch(err => console.error('Webhook error:', err))
+        }
+
         toast.success("Job card submitted successfully!")
         router.push("/")
       } else {

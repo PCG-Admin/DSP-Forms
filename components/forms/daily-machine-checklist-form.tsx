@@ -303,9 +303,41 @@ export function DailyMachineChecklistForm({ brand }: DailyMachineChecklistFormPr
           data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
-      if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
-      else toast.error("Failed to submit checklist")
-    } catch { toast.error("An error occurred. Please try again.") } finally { setIsSubmitting(false) }
+
+      if (!response.ok) throw new Error("Submission failed")
+
+      // --- Send data to Make webhook (DocuWare integration) ---
+      const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL || "https://hook.eu2.make.com/jpe5eihs8nh1gacuxe745c2uig0js9n0"
+
+      const makePayload = {
+        formType: "daily-machine-checklist",
+        formTitle: "Daily Machine Checklist",  // used for filename
+        submittedBy: formData.vehicleEquipment,
+        submittedAt: new Date().toISOString(),
+        brand,
+        documentNo,                            // used for filename
+        hasDefects,
+        defectDetails,
+        inspectionData: {
+          ...formData,
+          items,
+        },
+      }
+
+      // Fire‑and‑forget – do not await
+      fetch(makeWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(makePayload),
+      }).catch(err => console.error("Make webhook error:", err))
+
+      toast.success("Checklist submitted successfully!")
+      router.push("/")
+    } catch {
+      toast.error("An error occurred. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

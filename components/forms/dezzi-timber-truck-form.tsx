@@ -15,7 +15,7 @@ import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } fro
 import Link from "next/link"
 import Image from "next/image"
 import { BrandLogo } from '@/components/brand-logo'
-import { NameSelector } from "@/components/name-selector" // added import
+import { NameSelector } from "@/components/name-selector"
 
 // ============================================================================
 // INSPECTION ITEMS – as they appear in the Dezzi Timber Truck PDF
@@ -108,7 +108,7 @@ const itemIconMap: Record<string, string> = {
   "Communication": "communication.png",
   "Chocks": "wheel-nut.png",
   "Fire Extinguisher (1 x 1.5kg extinguisher)": "fire-extinguisher.png",
-  "Brake Efficiency Test": "foot-brake.png", // fallback
+  "Brake Efficiency Test": "foot-brake.png",
 }
 
 interface ItemRowProps {
@@ -270,9 +270,41 @@ export function DezziTimberTruckForm({ brand }: DezziTimberTruckFormProps) {
           data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
-      if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
-      else toast.error("Failed to submit checklist")
-    } catch { toast.error("An error occurred. Please try again.") } finally { setIsSubmitting(false) }
+
+      if (!response.ok) throw new Error("Submission failed")
+
+      // --- Send data to Make webhook (DocuWare integration) ---
+      const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL || "https://hook.eu2.make.com/jpe5eihs8nh1gacuxe745c2uig0js9n0"
+
+      const makePayload = {
+        formType: "dezzi-timber-truck",
+        formTitle: "Dezzi Timber Truck Pre-Shift Checklist",
+        submittedBy: formData.operatorName,
+        submittedAt: new Date().toISOString(),
+        brand,
+        documentNo,
+        hasDefects,
+        defectDetails,
+        inspectionData: {
+          ...formData,
+          items,
+        },
+      }
+
+      // Fire‑and‑forget – do not await
+      fetch(makeWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(makePayload),
+      }).catch(err => console.error("Make webhook error:", err))
+
+      toast.success("Checklist submitted successfully!")
+      router.push("/")
+    } catch {
+      toast.error("An error occurred. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

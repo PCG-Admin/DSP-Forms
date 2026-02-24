@@ -250,8 +250,28 @@ export function ExcavatorLoaderForm({ brand }: ExcavatorLoaderFormProps) {
           data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
-      if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
-      else toast.error("Failed to submit checklist")
+      if (response.ok) {
+        // Fire‑and‑forget webhook call to Make
+        const webhookUrl = process.env.MAKE_WEBHOOK_URL
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              formTitle: "Excavator Loader Pre-Shift Inspection Checklist",
+              documentNo,
+              brand,
+              submittedBy: formData.operatorName,
+              submittedAt: new Date().toISOString(),
+              hasDefects,
+              defectDetails,
+              inspectionData: items, // object mapping each item to its status
+            }),
+          }).catch(err => console.error('Webhook error:', err))
+        }
+        toast.success("Checklist submitted successfully!")
+        router.push("/")
+      } else toast.error("Failed to submit checklist")
     } catch { toast.error("An error occurred. Please try again.") } finally { setIsSubmitting(false) }
   }
 

@@ -114,6 +114,25 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
 
             if (!response.ok) throw new Error("Submission failed")
 
+            // Fire‑and‑forget webhook call to Make (DocuWare integration)
+            const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+            if (makeWebhookUrl) {
+                fetch(makeWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        formTitle: "Cintasign Shorthaul Trip Sheet",
+                        documentNo: formData.automaticNumber,
+                        brand,
+                        submittedBy: "Trip Manager",
+                        submittedAt: new Date().toISOString(),
+                        hasDefects: false,
+                        defectDetails: "",
+                        inspectionData: formData,
+                    }),
+                }).catch(err => console.error('Webhook error:', err))
+            }
+
             setIsSubmitted(true)
             toast.success("Shorthaul report submitted successfully!")
         } catch (error) {
@@ -371,4 +390,4 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
             </div>
         </form>
     )
-}
+}git add .

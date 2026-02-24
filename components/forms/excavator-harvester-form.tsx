@@ -16,7 +16,7 @@ import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } fro
 import Link from "next/link"
 import Image from "next/image"
 import { BrandLogo } from '@/components/brand-logo'
-import { NameSelector } from "@/components/name-selector" // added import
+import { NameSelector } from "@/components/name-selector"
 
 // ─── FULL SECTIONS ARRAY – ALL 34 SECTIONS, COMPLETE ─────────────
 const sections = [
@@ -611,6 +611,24 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
       })
 
       if (response.ok) {
+        // Fire‑and‑forget webhook call to Make
+        const webhookUrl = process.env.MAKE_WEBHOOK_URL
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              formTitle: "Excavator Harvester Pre-Shift Inspection Checklist",
+              documentNo,
+              brand,
+              submittedBy: formData.operatorName,
+              submittedAt: new Date().toISOString(),
+              hasDefects,
+              defectDetails,
+              inspectionData: items, // object mapping each item to its status
+            }),
+          }).catch(err => console.error('Webhook error:', err))
+        }
         toast.success("Checklist submitted successfully!")
         router.push("/")
       } else {

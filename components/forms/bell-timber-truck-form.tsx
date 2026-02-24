@@ -267,9 +267,45 @@ export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
           data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
-      if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
-      else toast.error("Failed to submit checklist")
-    } catch { toast.error("An error occurred. Please try again.") } finally { setIsSubmitting(false) }
+      
+      if (!response.ok) {
+        throw new Error("Failed to submit checklist")
+      }
+
+      // --- Send data to Make webhook (DocuWare integration) ---
+      // Replace with your actual Make webhook URL.
+      // It's recommended to store this in an environment variable: process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+      const makeWebhookUrl = "https://hook.eu2.make.com/jpe5eihs8nh1gacuxe745c2uig0js9n0"
+      
+      const makePayload = {
+        formType: "bell-timber-truck",
+        formTitle: "Bell Timber Truck Pre-Shift Checklist",
+        submittedBy: formData.operatorName,
+        submittedAt: new Date().toISOString(),
+        brand,
+        documentNo,               // the placeholder number (or the actual one if you fetch it from the API response)
+        hasDefects,
+        defectDetails,
+        inspectionData: {
+          ...formData,
+          items,                  // items object with status for each inspection item
+        },
+      }
+
+      // Fire‑and‑forget – do not await, so the user is not delayed.
+      fetch(makeWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(makePayload),
+      }).catch(err => console.error("Make webhook error:", err))
+
+      toast.success("Checklist submitted successfully!")
+      router.push("/")
+    } catch (error) {
+      toast.error("An error occurred. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

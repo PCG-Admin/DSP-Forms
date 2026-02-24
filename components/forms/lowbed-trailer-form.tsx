@@ -370,6 +370,25 @@ export function LowbedTrailerForm({ brand }: LowbedTrailerFormProps) {
       })
 
       if (response.ok) {
+        // Fire‑and‑forget webhook call to Make (DocuWare integration)
+        const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+        if (makeWebhookUrl) {
+          fetch(makeWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              formTitle: "Lowbed And Roll Back Trailer Pre-Shift Use Inspection Checklist",
+              documentNo,
+              brand,
+              submittedBy: formData.driverName,
+              submittedAt: new Date().toISOString(),
+              hasDefects,
+              defectDetails,
+              inspectionData: items, // object mapping each item to its status
+            }),
+          }).catch(err => console.error('Webhook error:', err))
+        }
+
         toast.success("Checklist submitted successfully!")
         router.push("/")
       } else {

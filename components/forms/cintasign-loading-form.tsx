@@ -106,6 +106,30 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
 
             if (!response.ok) throw new Error("Submission failed")
 
+            // --- Send data to Make webhook (DocuWare integration) ---
+            // Replace with your actual Make webhook URL.
+            // It's recommended to store this in an environment variable: process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+            const makeWebhookUrl = "https://hook.eu2.make.com/jpe5eihs8nh1gacuxe745c2uig0js9n0"
+
+            const makePayload = {
+                formType: "cintasign-loading",
+                formTitle: "Cintasign Loading Sheet",
+                submittedBy: "Loading Supervisor",
+                submittedAt: new Date().toISOString(),
+                brand,
+                documentNo: formData.automaticNumber,
+                hasDefects: false,
+                defectDetails: "",
+                inspectionData: formData, // full form data including automaticNumber, entries, etc.
+            }
+
+            // Fire‑and‑forget – do not await, so the user is not delayed.
+            fetch(makeWebhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(makePayload),
+            }).catch(err => console.error("Make webhook error:", err))
+
             setIsSubmitted(true)
             toast.success("Loading report submitted successfully!")
         } catch (error) {
