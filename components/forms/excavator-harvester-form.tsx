@@ -15,7 +15,8 @@ import { excavatorHarvesterItems, type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { BrandLogo } from '@/components/brand-logo';
+import { BrandLogo } from '@/components/brand-logo'
+import { NameSelector } from "@/components/name-selector" // added import
 
 // ─── FULL SECTIONS ARRAY – ALL 34 SECTIONS, COMPLETE ─────────────
 const sections = [
@@ -402,15 +403,34 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
     unitNumber: ""
   })
 
-  // ---------- Auto‑generate Document Number ----------
-  const documentNo = useMemo(() => {
-    const date = new Date()
-    const year = date.getFullYear().toString().slice(-2)
-    const month = (date.getMonth() + 1).toString().padStart(2, "0")
-    const day = date.getDate().toString().padStart(2, "0")
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0")
-    return `EH-${year}${month}${day}-${random}`
+  // State for the next document number fetched from server
+  const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+  // Fetch next document number on mount
+  useEffect(() => {
+    const fetchNextNumber = async () => {
+      try {
+        const res = await fetch('/api/next-document?formType=excavator-harvester')
+        if (res.ok) {
+          const data = await res.json()
+          setNextNumber(data.nextNumber)
+        } else {
+          console.error('Failed to fetch next document number')
+        }
+      } catch (error) {
+        console.error('Error fetching next document number:', error)
+      }
+    }
+    fetchNextNumber()
   }, [])
+
+  // Compute the document number using the fetched next number, falling back to 100 if not yet loaded
+  const documentNo = useMemo(() => {
+    const d = new Date()
+    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+    const num = nextNumber !== null ? nextNumber : 100
+    return `${yymmdd}-${num}`
+  }, [nextNumber])
 
   // ---------- Inspection Items State ----------
   const [items, setItems] = useState<Record<string, CheckStatus>>(
@@ -579,15 +599,14 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
           formTitle: "Excavator Harvester Pre-Shift Inspection Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
-          brand: brand, // ✅ include the brand from props
+          brand: brand,
           data: {
             ...formData,
-            documentNo,
             items,
             hasDefects,
             defectDetails,
             signature: signatureImage
-          }
+          } // documentNo NOT included
         })
       })
 
@@ -668,19 +687,17 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
           <CardTitle className="text-base text-foreground">Operator Information</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="operatorName" className="text-foreground">
-              Operator Name & Surname <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="operatorName"
-              value={formData.operatorName}
-              onChange={(e) => setFormData((p) => ({ ...p, operatorName: e.target.value }))}
-              placeholder="Enter operator name"
-              required
-            />
-          </div>
+          {/* Operator name dropdown */}
+          <NameSelector
+            brand={brand}
+            value={formData.operatorName}
+            onChange={(val) => setFormData((p) => ({ ...p, operatorName: val }))}
+            label="Operator Name & Surname"
+            required
+            placeholder="Select operator name"
+          />
 
+          {/* Document number field – read‑only, now shows actual next number */}
           <div className="space-y-2">
             <Label htmlFor="documentNo" className="text-foreground">Document No.</Label>
             <Input
@@ -804,7 +821,6 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           {sections.map((section, sectionIdx) => {
-            // ----- ALL 34 SECTIONS – EVERY SECTION NOW HAS AN ICON IN THE MIDDLE -----
             if (section.title === "License and Phepha") {
               return renderGroupedSection(
                 section.title,
@@ -1022,7 +1038,6 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
               )
             }
 
-            // ----- NEW FINAL 10 SECTIONS – NOW GROUPED -----
             if (section.title === "Boom Structure") {
               return renderGroupedSection(
                 section.title,
@@ -1114,7 +1129,7 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
               )
             }
 
-            // ----- Fallback (should never be reached) – now with typed onChange -----
+            // Fallback (should not happen)
             return (
               <div key={sectionIdx} className="space-y-2">
                 <h4 className="text-sm font-semibold text-primary">{section.title}</h4>
@@ -1135,7 +1150,7 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
         </CardContent>
       </Card>
 
-      {/* ===== DEFECTS SECTION (always visible) ===== */}
+      {/* DEFECTS SECTION */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

@@ -14,6 +14,7 @@ import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } fro
 import Link from "next/link"
 import Image from "next/image"
 import { BrandLogo } from "@/components/brand-logo"
+import { NameSelector } from "@/components/name-selector"
 
 const ALL_INSPECTION_ITEMS: string[] = [
   "Vehicle License and Phepha",
@@ -118,10 +119,36 @@ export function TimberTruckTrailerForm({ brand }: TimberTruckTrailerFormProps) {
     truckRegistration: "",
     trailerRegistration: "",
   })
+
+  // State for the next document number fetched from server
+  const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+  // Fetch next document number on mount
+  useEffect(() => {
+    const fetchNextNumber = async () => {
+      try {
+        const res = await fetch('/api/next-document?formType=timber-truck-trailer')
+        if (res.ok) {
+          const data = await res.json()
+          setNextNumber(data.nextNumber)
+        } else {
+          console.error('Failed to fetch next document number')
+        }
+      } catch (error) {
+        console.error('Error fetching next document number:', error)
+      }
+    }
+    fetchNextNumber()
+  }, [])
+
+  // Compute the document number using the fetched next number, falling back to 100 if not yet loaded
   const documentNo = useMemo(() => {
     const d = new Date()
-    return `TT-${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}-${Math.floor(Math.random()*1000).toString().padStart(3,"0")}`
-  }, [])
+    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+    const num = nextNumber !== null ? nextNumber : 100
+    return `${yymmdd}-${num}`
+  }, [nextNumber])
+
   const [items, setItems] = useState<Record<string, CheckStatus>>(
     Object.fromEntries(ALL_INSPECTION_ITEMS.map(item => [item, null]))
   )
@@ -190,8 +217,8 @@ export function TimberTruckTrailerForm({ brand }: TimberTruckTrailerFormProps) {
           formTitle: "Timber Truck And Trailer Checklist",
           submittedBy: formData.driverName,
           hasDefects,
-          brand: brand, // ✅ use prop
-          data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
+          brand: brand,
+          data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
       if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
@@ -230,16 +257,61 @@ export function TimberTruckTrailerForm({ brand }: TimberTruckTrailerFormProps) {
       <Card>
         <CardHeader><CardTitle className="text-base text-foreground">Driver Information</CardTitle></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2"><Label htmlFor="driverName">Driver's name <span className="text-destructive">*</span></Label><Input id="driverName" value={formData.driverName} onChange={e => setFormData(p=>({...p, driverName:e.target.value}))} placeholder="Enter driver name" required /></div>
-          <div className="space-y-2"><Label htmlFor="documentNo">Document No.</Label><Input id="documentNo" value={documentNo} readOnly className="bg-muted" /></div>
-          <div className="space-y-2"><Label htmlFor="unitNumber">Unit number</Label><Input id="unitNumber" value={formData.unitNumber} onChange={e => setFormData(p=>({...p, unitNumber:e.target.value}))} placeholder="e.g. TT-001" /></div>
-          <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={formData.date} onChange={e => setFormData(p=>({...p, date:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="openingKm">Opening kilometres</Label><Input id="openingKm" type="number" value={formData.openingKm} onChange={e => setFormData(p=>({...p, openingKm:e.target.value}))} placeholder="e.g. 45200" /></div>
-          <div className="space-y-2"><Label htmlFor="closingKm">Closing kilometres</Label><Input id="closingKm" type="number" value={formData.closingKm} onChange={e => setFormData(p=>({...p, closingKm:e.target.value}))} placeholder="e.g. 45350" /></div>
-          <div className="space-y-2"><Label htmlFor="validLicense">Valid driver's license (exp date)</Label><Input id="validLicense" type="date" value={formData.validLicense} onChange={e => setFormData(p=>({...p, validLicense:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="validPDP">Valid PDP (exp date)</Label><Input id="validPDP" type="date" value={formData.validPDP} onChange={e => setFormData(p=>({...p, validPDP:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="truckRegistration">Truck registration <span className="text-destructive">*</span></Label><Input id="truckRegistration" value={formData.truckRegistration} onChange={e => setFormData(p=>({...p, truckRegistration:e.target.value}))} placeholder="e.g. ABC 123 GP" required /></div>
-          <div className="space-y-2"><Label htmlFor="trailerRegistration">Trailer registration</Label><Input id="trailerRegistration" value={formData.trailerRegistration} onChange={e => setFormData(p=>({...p, trailerRegistration:e.target.value}))} placeholder="e.g. TRL-001" /></div>
+          {/* Driver name dropdown */}
+          <NameSelector
+            brand={brand}
+            value={formData.driverName}
+            onChange={(val) => setFormData(p => ({ ...p, driverName: val }))}
+            label="Driver's name"
+            required
+            placeholder="Select driver name"
+          />
+
+          {/* Document number field – read‑only, now shows actual next number */}
+          <div className="space-y-2">
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unitNumber">Unit number</Label>
+            <Input id="unitNumber" value={formData.unitNumber} onChange={e => setFormData(p => ({ ...p, unitNumber: e.target.value }))} placeholder="e.g. TT-001" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="openingKm">Opening kilometres</Label>
+            <Input id="openingKm" type="number" value={formData.openingKm} onChange={e => setFormData(p => ({ ...p, openingKm: e.target.value }))} placeholder="e.g. 45200" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="closingKm">Closing kilometres</Label>
+            <Input id="closingKm" type="number" value={formData.closingKm} onChange={e => setFormData(p => ({ ...p, closingKm: e.target.value }))} placeholder="e.g. 45350" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="validLicense">Valid driver's license (exp date)</Label>
+            <Input id="validLicense" type="date" value={formData.validLicense} onChange={e => setFormData(p => ({ ...p, validLicense: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="validPDP">Valid PDP (exp date)</Label>
+            <Input id="validPDP" type="date" value={formData.validPDP} onChange={e => setFormData(p => ({ ...p, validPDP: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="truckRegistration">Truck registration <span className="text-destructive">*</span></Label>
+            <Input id="truckRegistration" value={formData.truckRegistration} onChange={e => setFormData(p => ({ ...p, truckRegistration: e.target.value }))} placeholder="e.g. ABC 123 GP" required />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="trailerRegistration">Trailer registration</Label>
+            <Input id="trailerRegistration" value={formData.trailerRegistration} onChange={e => setFormData(p => ({ ...p, trailerRegistration: e.target.value }))} placeholder="e.g. TRL-001" />
+          </div>
         </CardContent>
       </Card>
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,9 +46,8 @@ export default function LoginPage() {
         })
         if (error) throw error
 
-        // Let the middleware handle redirect based on role/brand
         router.push('/')
-        router.refresh() // optional: forces a server re-check
+        router.refresh()
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -74,6 +74,23 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          {/* Logos */}
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <Image
+              src="/images/dsp-logo.png"
+              alt="DSP Logo"
+              width={120}
+              height={40}
+              className="object-contain"
+            />
+            <Image
+              src="/images/Mindrift_Logo.jpg"
+              alt="Mindrift Logo"
+              width={120}
+              height={40}
+              className="object-contain"
+            />
+          </div>
           <CardTitle className="text-2xl">{isLogin ? 'Sign In' : 'Create Account'}</CardTitle>
           <CardDescription>
             {isLogin

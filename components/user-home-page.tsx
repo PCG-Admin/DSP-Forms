@@ -4,10 +4,12 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import * as Icons from "lucide-react"
 import { 
   ArrowRight, 
-  ClipboardList
+  ClipboardList,
+  Search
 } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
 import { createClient } from "@/lib/supabase/client"
@@ -47,6 +49,8 @@ interface UserHomePageProps {
 
 export function UserHomePage({ brand }: UserHomePageProps) {
   const [forms, setForms] = useState<Form[]>([])
+  const [filteredForms, setFilteredForms] = useState<Form[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -62,11 +66,27 @@ export function UserHomePage({ brand }: UserHomePageProps) {
         console.error('Error loading forms:', error)
       } else {
         setForms(data || [])
+        setFilteredForms(data || [])
       }
       setLoading(false)
     }
     loadForms()
   }, [supabase])
+
+  // Filter forms when search query changes
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredForms(forms)
+    } else {
+      const query = searchQuery.toLowerCase()
+      const filtered = forms.filter(form => 
+        form.title.toLowerCase().includes(query) ||
+        form.subtitle.toLowerCase().includes(query) ||
+        form.description.toLowerCase().includes(query)
+      )
+      setFilteredForms(filtered)
+    }
+  }, [searchQuery, forms])
 
   if (loading) {
     return (
@@ -97,51 +117,73 @@ export function UserHomePage({ brand }: UserHomePageProps) {
           <Card className="text-center w-full max-w-xs">
             <CardContent className="pt-6">
               <ClipboardList className="mx-auto mb-2 h-6 w-6 text-primary" />
-              <div className="text-2xl font-bold text-foreground">{forms.length}</div>
-              <div className="text-xs text-muted-foreground">Available Forms</div>
+              <div className="text-2xl font-bold text-foreground">{filteredForms.length}</div>
+              <div className="text-xs text-muted-foreground">
+                {filteredForms.length === forms.length ? "Available Forms" : "Matching Forms"}
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Form Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-          {forms.map((form) => {
-            const Icon = iconMap[form.icon_name] || Icons.FileText
-            return (
-              <Card
-                key={form.id}
-                className="group relative overflow-hidden transition-all hover:border-primary/30 hover:shadow-md flex flex-col h-full"
-              >
-                <CardHeader>
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg text-foreground">{form.title}</CardTitle>
-                  <CardDescription className="text-xs font-medium uppercase tracking-wide text-primary">
-                    {form.subtitle}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 flex-grow flex flex-col">
-                  <p className="text-sm text-muted-foreground flex-grow">{form.description}</p>
-                  
-                  {/* Document Reference & Item Count */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{form.item_count > 0 ? `${form.item_count} inspection items` : "No inspection items"}</span>
-                    <span className="font-mono">{form.document_ref}</span>
-                  </div>
-
-                  {/* Start Inspection Button */}
-                  <Button asChild className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 mt-2">
-                    <Link href={`/${form.form_type}`}>
-                      Start Inspection
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )
-          })}
+        {/* Search Input */}
+        <div className="mb-8 flex justify-center">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search forms by title, subtitle, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
+
+        {/* Form Cards */}
+        {filteredForms.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No forms match your search.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+            {filteredForms.map((form) => {
+              const Icon = iconMap[form.icon_name] || Icons.FileText
+              return (
+                <Card
+                  key={form.id}
+                  className="group relative overflow-hidden transition-all hover:border-primary/30 hover:shadow-md flex flex-col h-full"
+                >
+                  <CardHeader>
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                      <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-lg text-foreground">{form.title}</CardTitle>
+                    <CardDescription className="text-xs font-medium uppercase tracking-wide text-primary">
+                      {form.subtitle}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 flex-grow flex flex-col">
+                    <p className="text-sm text-muted-foreground flex-grow">{form.description}</p>
+                    
+                    {/* Document Reference & Item Count */}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{form.item_count > 0 ? `${form.item_count} inspection items` : "No inspection items"}</span>
+                      <span className="font-mono">{form.document_ref}</span>
+                    </div>
+
+                    {/* Start Inspection Button */}
+                    <Button asChild className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 mt-2">
+                      <Link href={`/${form.form_type}`}>
+                        Start Inspection
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
 
         {/* Footer */}
         <footer className="mt-12 border-t border-border pt-6 text-center text-xs text-muted-foreground">

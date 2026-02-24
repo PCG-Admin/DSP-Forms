@@ -14,7 +14,8 @@ import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { BrandLogo } from '@/components/brand-logo';
+import { BrandLogo } from '@/components/brand-logo'
+import { NameSelector } from "@/components/name-selector"
 
 // ============================================================================
 // INSPECTION ITEMS – exactly as they appear in the Excavator Loader PDF
@@ -147,10 +148,34 @@ export function ExcavatorLoaderForm({ brand }: ExcavatorLoaderFormProps) {
     unitNumber: "",
   })
 
+  // State for the next document number fetched from server
+  const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+  // Fetch next document number on mount
+  useEffect(() => {
+    const fetchNextNumber = async () => {
+      try {
+        const res = await fetch('/api/next-document?formType=excavator-loader')
+        if (res.ok) {
+          const data = await res.json()
+          setNextNumber(data.nextNumber)
+        } else {
+          console.error('Failed to fetch next document number')
+        }
+      } catch (error) {
+        console.error('Error fetching next document number:', error)
+      }
+    }
+    fetchNextNumber()
+  }, [])
+
+  // Compute the document number using the fetched next number, falling back to 100 if not yet loaded
   const documentNo = useMemo(() => {
     const d = new Date()
-    return `EL-${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}-${Math.floor(Math.random()*1000).toString().padStart(3,"0")}`
-  }, [])
+    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+    const num = nextNumber !== null ? nextNumber : 100
+    return `${yymmdd}-${num}`
+  }, [nextNumber])
 
   const [items, setItems] = useState<Record<string, CheckStatus>>(
     Object.fromEntries(ALL_INSPECTION_ITEMS.map(item => [item, null]))
@@ -215,14 +240,14 @@ export function ExcavatorLoaderForm({ brand }: ExcavatorLoaderFormProps) {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({
           formType: "excavator-loader",
           formTitle: "Excavator Loader Pre-Shift Inspection Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
-          brand: brand, // ✅ include the brand from props
-          data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
+          brand: brand,
+          data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
       if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
@@ -277,14 +302,57 @@ export function ExcavatorLoaderForm({ brand }: ExcavatorLoaderFormProps) {
       <Card>
         <CardHeader><CardTitle className="text-base text-foreground">Operator Information</CardTitle></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2"><Label htmlFor="operatorName">Operators name and surname <span className="text-destructive">*</span></Label><Input id="operatorName" value={formData.operatorName} onChange={e => setFormData(p=>({...p, operatorName:e.target.value}))} placeholder="Enter operator name" required /></div>
-          <div className="space-y-2"><Label htmlFor="documentNo">Document No.</Label><Input id="documentNo" value={documentNo} readOnly className="bg-muted" /></div>
-          <div className="space-y-2"><Label htmlFor="shift">Shift</Label><Select value={formData.shift} onValueChange={val => setFormData(p=>({...p, shift:val}))}><SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger><SelectContent><SelectItem value="day">Day Shift</SelectItem><SelectItem value="night">Night Shift</SelectItem></SelectContent></Select></div>
-          <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={formData.date} onChange={e => setFormData(p=>({...p, date:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="hourMeterStart">Hour meter start</Label><Input id="hourMeterStart" type="number" value={formData.hourMeterStart} onChange={e => setFormData(p=>({...p, hourMeterStart:e.target.value}))} placeholder="e.g. 1250" /></div>
-          <div className="space-y-2"><Label htmlFor="hourMeterStop">Hour meter stop</Label><Input id="hourMeterStop" type="number" value={formData.hourMeterStop} onChange={e => setFormData(p=>({...p, hourMeterStop:e.target.value}))} placeholder="e.g. 1262" /></div>
-          <div className="space-y-2"><Label htmlFor="validTrainingCard">Valid training card (exp date)</Label><Input id="validTrainingCard" type="date" value={formData.validTrainingCard} onChange={e => setFormData(p=>({...p, validTrainingCard:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="unitNumber">Unit number <span className="text-destructive">*</span></Label><Input id="unitNumber" value={formData.unitNumber} onChange={e => setFormData(p=>({...p, unitNumber:e.target.value}))} placeholder="e.g. EXC-L-001" required /></div>
+          {/* Operator name dropdown */}
+          <NameSelector
+            brand={brand}
+            value={formData.operatorName}
+            onChange={(val) => setFormData(p => ({ ...p, operatorName: val }))}
+            label="Operators name and surname"
+            required
+            placeholder="Select operator name"
+          />
+
+          {/* Document number field – read‑only, now shows actual next number */}
+          <div className="space-y-2">
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="shift">Shift</Label>
+            <Select value={formData.shift} onValueChange={val => setFormData(p => ({ ...p, shift: val }))}>
+              <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Day Shift</SelectItem>
+                <SelectItem value="night">Night Shift</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="hourMeterStart">Hour meter start</Label>
+            <Input id="hourMeterStart" type="number" value={formData.hourMeterStart} onChange={e => setFormData(p => ({ ...p, hourMeterStart: e.target.value }))} placeholder="e.g. 1250" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="hourMeterStop">Hour meter stop</Label>
+            <Input id="hourMeterStop" type="number" value={formData.hourMeterStop} onChange={e => setFormData(p => ({ ...p, hourMeterStop: e.target.value }))} placeholder="e.g. 1262" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="validTrainingCard">Valid training card (exp date)</Label>
+            <Input id="validTrainingCard" type="date" value={formData.validTrainingCard} onChange={e => setFormData(p => ({ ...p, validTrainingCard: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unitNumber">Unit number <span className="text-destructive">*</span></Label>
+            <Input id="unitNumber" value={formData.unitNumber} onChange={e => setFormData(p => ({ ...p, unitNumber: e.target.value }))} placeholder="e.g. EXC-L-001" required />
+          </div>
         </CardContent>
       </Card>
 

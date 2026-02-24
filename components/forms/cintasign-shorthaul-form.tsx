@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -30,7 +30,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
         date: new Date().toISOString().split("T")[0],
         day: "",
         farm: "",
-        automaticNumber: "8826",
+        automaticNumber: "",
         unit: "CNT2" as CintasignUnit,
         fleetEntries: Array(8).fill(null).map(() => ({
             fleetNo: "", operator: "", shift: "", compartment: "", noOfLoads: "", estTons: "",
@@ -44,6 +44,32 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
+
+    // State for the next document number fetched from server
+    const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+    // Fetch next document number on mount
+    useEffect(() => {
+        const fetchNextNumber = async () => {
+            try {
+                const res = await fetch('/api/next-document?formType=cintasign-shorthaul')
+                if (res.ok) {
+                    const data = await res.json()
+                    setNextNumber(data.nextNumber)
+                    // Set the automatic number after fetching
+                    const d = new Date()
+                    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+                    const num = data.nextNumber
+                    setFormData(prev => ({ ...prev, automaticNumber: `${yymmdd}-${num}` }))
+                } else {
+                    console.error('Failed to fetch next document number')
+                }
+            } catch (error) {
+                console.error('Error fetching next document number:', error)
+            }
+        }
+        fetchNextNumber()
+    }, [])
 
     // Calculate grand total of all "EST. Tons" fields
     const grandTotalEstTons = useMemo(() => {
@@ -74,7 +100,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
             formTitle: "Cintasign Shorthaul Trip Sheet",
             submittedBy: "Trip Manager",
             hasDefects: false,
-            brand: brand, // ✅ use prop
+            brand: brand,
             data: formData,
         }
 
@@ -182,7 +208,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                     </div>
                     <div className="space-y-2">
                         <Label>Automatic Number</Label>
-                        <Input value={formData.automaticNumber} onChange={e => setFormData(prev => ({ ...prev, automaticNumber: e.target.value }))} />
+                        <Input value={formData.automaticNumber} readOnly className="bg-muted" />
                     </div>
                     <div className="space-y-2">
                         <Label>Cintasign Unit</Label>

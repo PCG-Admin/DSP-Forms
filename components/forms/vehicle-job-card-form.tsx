@@ -14,6 +14,7 @@ import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } fro
 import Link from "next/link"
 import Image from "next/image"
 import { BrandLogo } from "@/components/brand-logo"
+import { NameSelector } from "@/components/name-selector"
 
 // ============================================================================
 // PROPS INTERFACE
@@ -29,7 +30,6 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
   // ---------- Form Fields (based on PDF) ----------
   const [formData, setFormData] = useState({
     driverName: "",
-    jobCardNumber: "",
     machineVehicle: "",
     machineRegNumber: "",
     hourMeterKmReading: "",
@@ -42,6 +42,35 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
     operatorsName: "",
   })
 
+  // State for the next document number fetched from server
+  const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+  // Fetch next document number on mount
+  useEffect(() => {
+    const fetchNextNumber = async () => {
+      try {
+        const res = await fetch('/api/next-document?formType=vehicle-job-card')
+        if (res.ok) {
+          const data = await res.json()
+          setNextNumber(data.nextNumber)
+        } else {
+          console.error('Failed to fetch next document number')
+        }
+      } catch (error) {
+        console.error('Error fetching next document number:', error)
+      }
+    }
+    fetchNextNumber()
+  }, [])
+
+  // Compute the document number using the fetched next number, falling back to 100 if not yet loaded
+  const documentNo = useMemo(() => {
+    const d = new Date()
+    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+    const num = nextNumber !== null ? nextNumber : 100
+    return `${yymmdd}-${num}`
+  }, [nextNumber])
+
   // ---------- Signature Pads ----------
   const mechanicsCanvasRef = useRef<HTMLCanvasElement>(null)
   const operatorsCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -49,16 +78,6 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
   const [isDrawingOperator, setIsDrawingOperator] = useState(false)
   const [mechanicSignature, setMechanicSignature] = useState<string | null>(null)
   const [operatorSignature, setOperatorSignature] = useState<string | null>(null)
-
-  // ---------- Auto‑generate Job Card Number ----------
-  const documentNo = useMemo(() => {
-    const date = new Date()
-    const year = date.getFullYear().toString().slice(-2)
-    const month = (date.getMonth() + 1).toString().padStart(2, "0")
-    const day = date.getDate().toString().padStart(2, "0")
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0")
-    return `JC-${year}${month}${day}-${random}`
-  }, [])
 
   // Initialize canvases
   useEffect(() => {
@@ -106,7 +125,7 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
     }
   }
 
-  // Signature helpers (with proper null checks)
+  // Signature helpers
   const startDrawing = (
     canvasRef: React.RefObject<HTMLCanvasElement | null>,
     setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>
@@ -191,13 +210,12 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
           formTitle: "Motorised Equipment/Vehicle Job Card",
           submittedBy: formData.driverName,
           hasDefects: false,
-          brand: brand, // ✅ include brand
+          brand: brand,
           data: {
             ...formData,
-            documentNo,
             mechanicSignature,
             operatorSignature,
-          },
+          }, // documentNo NOT included
         }),
       })
 
@@ -244,30 +262,42 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
           <CardTitle className="text-base">Job Information</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
+          {/* Driver name dropdown */}
+          <NameSelector
+            brand={brand}
+            value={formData.driverName}
+            onChange={(val) => setFormData(p => ({ ...p, driverName: val }))}
+            label="Drivers name"
+            required
+            placeholder="Select driver name"
+          />
+
+          {/* Document number field – read‑only, now shows actual next number */}
           <div className="space-y-2">
-            <Label htmlFor="driverName">Drivers name <span className="text-destructive">*</span></Label>
-            <Input id="driverName" value={formData.driverName} onChange={e => setFormData(p => ({ ...p, driverName: e.target.value }))} placeholder="Enter driver name" required />
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="jobCardNumber">Job card number</Label>
-            <Input id="jobCardNumber" value={documentNo} readOnly className="bg-muted" />
-          </div>
+
           <div className="space-y-2">
             <Label htmlFor="machineVehicle">Machine / vehicle <span className="text-destructive">*</span></Label>
             <Input id="machineVehicle" value={formData.machineVehicle} onChange={e => setFormData(p => ({ ...p, machineVehicle: e.target.value }))} placeholder="e.g. Excavator, Truck" required />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="machineRegNumber">Machine / registration number</Label>
             <Input id="machineRegNumber" value={formData.machineRegNumber} onChange={e => setFormData(p => ({ ...p, machineRegNumber: e.target.value }))} placeholder="e.g. ABC123" />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="hourMeterKmReading">Hour meter / KM reading</Label>
             <Input id="hourMeterKmReading" value={formData.hourMeterKmReading} onChange={e => setFormData(p => ({ ...p, hourMeterKmReading: e.target.value }))} placeholder="e.g. 1250" />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
             <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
           </div>
+
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="categoryOfWork">Category of work</Label>
             <Input id="categoryOfWork" value={formData.categoryOfWork} onChange={e => setFormData(p => ({ ...p, categoryOfWork: e.target.value }))} placeholder="e.g. Repair, Maintenance" />
@@ -313,8 +343,14 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="mechanicsName">Mechanics name</Label>
-              <Input id="mechanicsName" value={formData.mechanicsName} onChange={e => setFormData(p => ({ ...p, mechanicsName: e.target.value }))} />
+              {/* Mechanics name dropdown */}
+              <NameSelector
+                brand={brand}
+                value={formData.mechanicsName}
+                onChange={(val) => setFormData(p => ({ ...p, mechanicsName: val }))}
+                label="Mechanics name"
+                placeholder="Select mechanic name"
+              />
             </div>
             <div className="space-y-2">
               <Label>Mechanics signature</Label>
@@ -346,8 +382,14 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="operatorsName">Operators name</Label>
-              <Input id="operatorsName" value={formData.operatorsName} onChange={e => setFormData(p => ({ ...p, operatorsName: e.target.value }))} />
+              {/* Operators name dropdown */}
+              <NameSelector
+                brand={brand}
+                value={formData.operatorsName}
+                onChange={(val) => setFormData(p => ({ ...p, operatorsName: val }))}
+                label="Operators name"
+                placeholder="Select operator name"
+              />
             </div>
             <div className="space-y-2">
               <Label>Operators signature</Label>

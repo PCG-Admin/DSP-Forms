@@ -13,7 +13,8 @@ import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { BrandLogo } from '@/components/brand-logo';
+import { BrandLogo } from '@/components/brand-logo'
+import { NameSelector } from "@/components/name-selector"
 
 // ============================================================================
 // INSPECTION ITEMS – as they appear in the Diesel Cart Trailer PDF
@@ -109,10 +110,34 @@ export function DieselCartTrailerForm({ brand }: DieselCartTrailerFormProps) {
     date: new Date().toISOString().split("T")[0],
   })
 
+  // State for the next document number fetched from server
+  const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+  // Fetch next document number on mount
+  useEffect(() => {
+    const fetchNextNumber = async () => {
+      try {
+        const res = await fetch('/api/next-document?formType=diesel-cart-trailer')
+        if (res.ok) {
+          const data = await res.json()
+          setNextNumber(data.nextNumber)
+        } else {
+          console.error('Failed to fetch next document number')
+        }
+      } catch (error) {
+        console.error('Error fetching next document number:', error)
+      }
+    }
+    fetchNextNumber()
+  }, [])
+
+  // Compute the document number using the fetched next number, falling back to 100 if not yet loaded
   const documentNo = useMemo(() => {
     const d = new Date()
-    return `DC-${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}-${Math.floor(Math.random()*1000).toString().padStart(3,"0")}`
-  }, [])
+    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+    const num = nextNumber !== null ? nextNumber : 100
+    return `${yymmdd}-${num}`
+  }, [nextNumber])
 
   const [items, setItems] = useState<Record<string, CheckStatus>>(
     Object.fromEntries(ALL_INSPECTION_ITEMS.map(item => [item, null]))
@@ -177,14 +202,14 @@ export function DieselCartTrailerForm({ brand }: DieselCartTrailerFormProps) {
     try {
       const response = await fetch("/api/submissions", {
         method: "POST", headers: { "Content-Type": "application/json" },
-         credentials: "include", 
+        credentials: "include", 
         body: JSON.stringify({
           formType: "diesel-cart-trailer",
           formTitle: "Diesel Cart Trailer Inspection Checklist",
           submittedBy: formData.userName,
           hasDefects,
-          brand: brand, // ✅ include the brand from props
-          data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
+          brand: brand,
+          data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
       if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
@@ -224,10 +249,31 @@ export function DieselCartTrailerForm({ brand }: DieselCartTrailerFormProps) {
       <Card>
         <CardHeader><CardTitle className="text-base text-foreground">User Information</CardTitle></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2"><Label htmlFor="userName">Users name <span className="text-destructive">*</span></Label><Input id="userName" value={formData.userName} onChange={e => setFormData(p=>({...p, userName:e.target.value}))} placeholder="Enter user name" required /></div>
-          <div className="space-y-2"><Label htmlFor="documentNo">Document No.</Label><Input id="documentNo" value={documentNo} readOnly className="bg-muted" /></div>
-          <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={formData.date} onChange={e => setFormData(p=>({...p, date:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="registrationNumber">Registration number <span className="text-destructive">*</span></Label><Input id="registrationNumber" value={formData.registrationNumber} onChange={e => setFormData(p=>({...p, registrationNumber:e.target.value}))} placeholder="e.g. DC-001" required /></div>
+          {/* User name dropdown */}
+          <NameSelector
+            brand={brand}
+            value={formData.userName}
+            onChange={(val) => setFormData(p => ({ ...p, userName: val }))}
+            label="Users name"
+            required
+            placeholder="Select user name"
+          />
+
+          {/* Document number field – read‑only, now shows actual next number */}
+          <div className="space-y-2">
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="registrationNumber">Registration number <span className="text-destructive">*</span></Label>
+            <Input id="registrationNumber" value={formData.registrationNumber} onChange={e => setFormData(p => ({ ...p, registrationNumber: e.target.value }))} placeholder="e.g. DC-001" required />
+          </div>
         </CardContent>
       </Card>
 

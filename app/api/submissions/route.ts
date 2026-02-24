@@ -4,6 +4,54 @@ import type { Submission } from '@/lib/types'
 
 const ALLOWED_BRANDS = ['ringomode', 'cintasign'] as const
 
+async function getNextDocumentNumber(
+  supabase: any,
+  formType: string,
+  date: Date
+): Promise<string> {
+  const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD
+  const yymmdd = dateStr.slice(2).replace(/-/g, '') // YYMMDD
+
+  // Retry loop to handle concurrent requests
+  for (let attempt = 0; attempt < 5; attempt++) {
+    // Get current sequence
+    const { data: seq, error: selectError } = await supabase
+      .from('document_sequences')
+      .select('last_number')
+      .eq('form_type', formType)
+      .eq('date', dateStr)
+      .maybeSingle()
+
+    if (selectError) throw selectError
+
+    let nextNumber = 100 // start at 100
+    if (seq) {
+      nextNumber = seq.last_number + 1
+    }
+
+    // Attempt to upsert
+    const { error: upsertError } = await supabase
+      .from('document_sequences')
+      .upsert(
+        {
+          form_type: formType,
+          date: dateStr,
+          last_number: nextNumber,
+        },
+        { onConflict: 'form_type, date' }
+      )
+
+    if (!upsertError) {
+      return `${yymmdd}-${nextNumber}` // e.g., 250223-101
+    }
+
+    // Conflict – another request might have updated in the meantime, retry
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+
+  throw new Error('Failed to generate document number after multiple attempts')
+}
+
 export async function GET() {
   try {
     const supabase = createClient()
@@ -28,6 +76,7 @@ export async function GET() {
       hasDefects: s.has_defects,
       brand: s.brand,
       isRead: s.is_read,
+      documentNo: s.document_no, // include document number
     }))
 
     return NextResponse.json(transformed)
@@ -82,6 +131,13 @@ export async function POST(request: Request) {
       )
     }
 
+    // Generate document number (using current date)
+    const documentNo = await getNextDocumentNumber(
+      supabase,
+      body.formType,
+      new Date()
+    )
+
     const submission = {
       form_type: body.formType,
       form_title: body.formTitle,
@@ -92,6 +148,7 @@ export async function POST(request: Request) {
       brand: brand,
       is_read: false,
       user_id: user.id,
+      document_no: documentNo, // store the generated number
     }
 
     const { data: inserted, error } = await supabase

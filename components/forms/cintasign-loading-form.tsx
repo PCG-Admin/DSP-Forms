@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -38,7 +38,7 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
         date: new Date().toISOString().split("T")[0],
         day: "",
         farm: "",
-        automaticNumber: "9009",
+        automaticNumber: "",
         unit: "CNT3" as CintasignUnit,
         operator: "",
         fleetNo: "",
@@ -50,6 +50,32 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSubmitted, setIsSubmitted] = useState(false)
+
+    // State for the next document number fetched from server
+    const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+    // Fetch next document number on mount
+    useEffect(() => {
+        const fetchNextNumber = async () => {
+            try {
+                const res = await fetch('/api/next-document?formType=cintasign-loading')
+                if (res.ok) {
+                    const data = await res.json()
+                    setNextNumber(data.nextNumber)
+                    // Set the automatic number after fetching
+                    const d = new Date()
+                    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+                    const num = data.nextNumber
+                    setFormData(prev => ({ ...prev, automaticNumber: `${yymmdd}-${num}` }))
+                } else {
+                    console.error('Failed to fetch next document number')
+                }
+            } catch (error) {
+                console.error('Error fetching next document number:', error)
+            }
+        }
+        fetchNextNumber()
+    }, [])
 
     const handleEntryChange = (index: number, field: keyof LoadingEntry, value: string) => {
         const newEntries = [...formData.entries]
@@ -192,7 +218,8 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
                             <Input
                                 id="autoNumber"
                                 value={formData.automaticNumber}
-                                onChange={e => setFormData(prev => ({ ...prev, automaticNumber: e.target.value }))}
+                                readOnly
+                                className="bg-muted"
                             />
                         </div>
                     </div>

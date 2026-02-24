@@ -14,6 +14,7 @@ import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } fro
 import Link from "next/link"
 import Image from "next/image"
 import { BrandLogo } from "@/components/brand-logo"
+import { NameSelector } from "@/components/name-selector"
 
 // ============================================================================
 // INSPECTION ITEMS – exactly as they appear in the Service/Diesel Truck PDF
@@ -129,10 +130,34 @@ export function ServiceDieselTruckForm({ brand }: ServiceDieselTruckFormProps) {
     dangerousGoodsCard: "",
   })
 
+  // State for the next document number fetched from server
+  const [nextNumber, setNextNumber] = useState<number | null>(null)
+
+  // Fetch next document number on mount
+  useEffect(() => {
+    const fetchNextNumber = async () => {
+      try {
+        const res = await fetch('/api/next-document?formType=service-diesel-truck')
+        if (res.ok) {
+          const data = await res.json()
+          setNextNumber(data.nextNumber)
+        } else {
+          console.error('Failed to fetch next document number')
+        }
+      } catch (error) {
+        console.error('Error fetching next document number:', error)
+      }
+    }
+    fetchNextNumber()
+  }, [])
+
+  // Compute the document number using the fetched next number, falling back to 100 if not yet loaded
   const documentNo = useMemo(() => {
     const d = new Date()
-    return `SD-${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}-${Math.floor(Math.random()*1000).toString().padStart(3,"0")}`
-  }, [])
+    const yymmdd = `${d.getFullYear().toString().slice(-2)}${(d.getMonth()+1).toString().padStart(2,"0")}${d.getDate().toString().padStart(2,"0")}`
+    const num = nextNumber !== null ? nextNumber : 100
+    return `${yymmdd}-${num}`
+  }, [nextNumber])
 
   const [items, setItems] = useState<Record<string, CheckStatus>>(
     Object.fromEntries(ALL_INSPECTION_ITEMS.map(item => [item, null]))
@@ -203,8 +228,8 @@ export function ServiceDieselTruckForm({ brand }: ServiceDieselTruckFormProps) {
           formTitle: "Service/Diesel Truck Pre-Shift Inspection Checklist",
           submittedBy: formData.driverName,
           hasDefects,
-          brand: brand, // ✅ use prop
-          data: { ...formData, documentNo, items, hasDefects, defectDetails, signature: signatureImage }
+          brand: brand,
+          data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
       if (response.ok) { toast.success("Checklist submitted successfully!"); router.push("/") }
@@ -259,17 +284,66 @@ export function ServiceDieselTruckForm({ brand }: ServiceDieselTruckFormProps) {
       <Card>
         <CardHeader><CardTitle className="text-base text-foreground">Driver Information</CardTitle></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2"><Label htmlFor="driverName">Drivers name <span className="text-destructive">*</span></Label><Input id="driverName" value={formData.driverName} onChange={e => setFormData(p=>({...p, driverName:e.target.value}))} placeholder="Enter driver name" required /></div>
-          <div className="space-y-2"><Label htmlFor="documentNo">Document No.</Label><Input id="documentNo" value={documentNo} readOnly className="bg-muted" /></div>
-          <div className="space-y-2"><Label htmlFor="truckRegistration">Truck registration <span className="text-destructive">*</span></Label><Input id="truckRegistration" value={formData.truckRegistration} onChange={e => setFormData(p=>({...p, truckRegistration:e.target.value}))} placeholder="e.g. ABC 123 GP" required /></div>
-          <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={formData.date} onChange={e => setFormData(p=>({...p, date:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="odometerStartHours">Odometer start – hours</Label><Input id="odometerStartHours" type="number" value={formData.odometerStartHours} onChange={e => setFormData(p=>({...p, odometerStartHours:e.target.value}))} placeholder="e.g. 1250" /></div>
-          <div className="space-y-2"><Label htmlFor="odometerStopHours">Odometer stop – hours</Label><Input id="odometerStopHours" type="number" value={formData.odometerStopHours} onChange={e => setFormData(p=>({...p, odometerStopHours:e.target.value}))} placeholder="e.g. 1262" /></div>
-          <div className="space-y-2"><Label htmlFor="odometerStartKm">Odometer start – kilometres</Label><Input id="odometerStartKm" type="number" value={formData.odometerStartKm} onChange={e => setFormData(p=>({...p, odometerStartKm:e.target.value}))} placeholder="e.g. 45200" /></div>
-          <div className="space-y-2"><Label htmlFor="odometerStopKm">Odometer stop – kilometres</Label><Input id="odometerStopKm" type="number" value={formData.odometerStopKm} onChange={e => setFormData(p=>({...p, odometerStopKm:e.target.value}))} placeholder="e.g. 45350" /></div>
-          <div className="space-y-2"><Label htmlFor="validTrainingCard">Valid training card (exp date)</Label><Input id="validTrainingCard" type="date" value={formData.validTrainingCard} onChange={e => setFormData(p=>({...p, validTrainingCard:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="validPDP">Valid PDP license (exp date)</Label><Input id="validPDP" type="date" value={formData.validPDP} onChange={e => setFormData(p=>({...p, validPDP:e.target.value}))} /></div>
-          <div className="space-y-2"><Label htmlFor="dangerousGoodsCard">Dangerous goods training card</Label><Input id="dangerousGoodsCard" type="text" value={formData.dangerousGoodsCard} onChange={e => setFormData(p=>({...p, dangerousGoodsCard:e.target.value}))} placeholder="e.g. DG-12345" /></div>
+          {/* Driver name dropdown */}
+          <NameSelector
+            brand={brand}
+            value={formData.driverName}
+            onChange={(val) => setFormData(p => ({ ...p, driverName: val }))}
+            label="Drivers name"
+            required
+            placeholder="Select driver name"
+          />
+
+          {/* Document number field – read‑only, now shows actual next number */}
+          <div className="space-y-2">
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="truckRegistration">Truck registration <span className="text-destructive">*</span></Label>
+            <Input id="truckRegistration" value={formData.truckRegistration} onChange={e => setFormData(p => ({ ...p, truckRegistration: e.target.value }))} placeholder="e.g. ABC 123 GP" required />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="odometerStartHours">Odometer start – hours</Label>
+            <Input id="odometerStartHours" type="number" value={formData.odometerStartHours} onChange={e => setFormData(p => ({ ...p, odometerStartHours: e.target.value }))} placeholder="e.g. 1250" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="odometerStopHours">Odometer stop – hours</Label>
+            <Input id="odometerStopHours" type="number" value={formData.odometerStopHours} onChange={e => setFormData(p => ({ ...p, odometerStopHours: e.target.value }))} placeholder="e.g. 1262" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="odometerStartKm">Odometer start – kilometres</Label>
+            <Input id="odometerStartKm" type="number" value={formData.odometerStartKm} onChange={e => setFormData(p => ({ ...p, odometerStartKm: e.target.value }))} placeholder="e.g. 45200" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="odometerStopKm">Odometer stop – kilometres</Label>
+            <Input id="odometerStopKm" type="number" value={formData.odometerStopKm} onChange={e => setFormData(p => ({ ...p, odometerStopKm: e.target.value }))} placeholder="e.g. 45350" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="validTrainingCard">Valid training card (exp date)</Label>
+            <Input id="validTrainingCard" type="date" value={formData.validTrainingCard} onChange={e => setFormData(p => ({ ...p, validTrainingCard: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="validPDP">Valid PDP license (exp date)</Label>
+            <Input id="validPDP" type="date" value={formData.validPDP} onChange={e => setFormData(p => ({ ...p, validPDP: e.target.value }))} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dangerousGoodsCard">Dangerous goods training card</Label>
+            <Input id="dangerousGoodsCard" type="text" value={formData.dangerousGoodsCard} onChange={e => setFormData(p => ({ ...p, dangerousGoodsCard: e.target.value }))} placeholder="e.g. DG-12345" />
+          </div>
         </CardContent>
       </Card>
 
