@@ -213,22 +213,25 @@ export function DieselCartTrailerForm({ brand }: DieselCartTrailerFormProps) {
         })
       })
       if (response.ok) {
-        // Fire‑and‑forget webhook call to Make
-        const webhookUrl = process.env.MAKE_WEBHOOK_URL
-        if (webhookUrl) {
-          fetch(webhookUrl, {
+        // --- Webhook call (fire‑and‑forget) ---
+        const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+        if (makeWebhookUrl) {
+          const formBody = new URLSearchParams()
+          formBody.append('data', JSON.stringify({
+            formTitle: "Diesel Cart Trailer Inspection Checklist",
+            documentNo,
+            brand,
+            submittedBy: formData.userName,
+            submittedAt: new Date().toISOString(),
+            hasDefects,
+            defectDetails,
+            inspectionData: items,
+          }))
+
+          fetch(makeWebhookUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              formTitle: "Diesel Cart Trailer Inspection Checklist",
-              documentNo,
-              brand,
-              submittedBy: formData.userName,
-              submittedAt: new Date().toISOString(),
-              hasDefects,
-              defectDetails,
-              inspectionData: items, // object mapping each item to its status
-            }),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formBody,
           }).catch(err => console.error('Webhook error:', err))
         }
         toast.success("Checklist submitted successfully!")

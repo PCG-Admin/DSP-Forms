@@ -273,30 +273,30 @@ export function DezziTimberTruckForm({ brand }: DezziTimberTruckFormProps) {
 
       if (!response.ok) throw new Error("Submission failed")
 
-      // --- Send data to Make webhook (DocuWare integration) ---
-      const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL || "https://hook.eu2.make.com/jpe5eihs8nh1gacuxe745c2uig0js9n0"
+      // --- Webhook call (fire‑and‑forget) ---
+      const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+      if (makeWebhookUrl) {
+        const formBody = new URLSearchParams()
+        formBody.append('data', JSON.stringify({
+          formTitle: "Dezzi Timber Truck Pre-Shift Checklist",
+          documentNo,
+          brand,
+          submittedBy: formData.operatorName,
+          submittedAt: new Date().toISOString(),
+          hasDefects,
+          defectDetails,
+          inspectionData: {
+            ...formData,
+            items,
+          },
+        }))
 
-      const makePayload = {
-        formType: "dezzi-timber-truck",
-        formTitle: "Dezzi Timber Truck Pre-Shift Checklist",
-        submittedBy: formData.operatorName,
-        submittedAt: new Date().toISOString(),
-        brand,
-        documentNo,
-        hasDefects,
-        defectDetails,
-        inspectionData: {
-          ...formData,
-          items,
-        },
+        fetch(makeWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formBody,
+        }).catch(err => console.error("Webhook error:", err))
       }
-
-      // Fire‑and‑forget – do not await
-      fetch(makeWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(makePayload),
-      }).catch(err => console.error("Make webhook error:", err))
 
       toast.success("Checklist submitted successfully!")
       router.push("/")

@@ -133,15 +133,33 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
         <Image src={iconSrc} alt={item} width={150} height={150} className="object-contain" />
       </div>
       <div className="py-3 pl-4 flex items-center gap-2">
-        <Button type="button" variant={isSelected("ok") ? "default" : "outline"} size="sm"
+        <Button
+          type="button"
+          variant={isSelected("ok") ? "default" : "outline"}
+          size="sm"
           onClick={() => onChange(isSelected("ok") ? null : "ok")}
-          className={`w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}>OK</Button>
-        <Button type="button" variant={isSelected("def") ? "default" : "outline"} size="sm"
+          className={`w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}
+        >
+          OK
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("def") ? "default" : "outline"}
+          size="sm"
           onClick={() => onChange(isSelected("def") ? null : "def")}
-          className={`w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}>DEF</Button>
-        <Button type="button" variant={isSelected("na") ? "default" : "outline"} size="sm"
+          className={`w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}
+        >
+          DEF
+        </Button>
+        <Button
+          type="button"
+          variant={isSelected("na") ? "default" : "outline"}
+          size="sm"
           onClick={() => onChange(isSelected("na") ? null : "na")}
-          className={`w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}>N/A</Button>
+          className={`w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}
+        >
+          N/A
+        </Button>
       </div>
     </div>
   )
@@ -250,54 +268,68 @@ export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.operatorName || !formData.unitNumber) { toast.error("Please fill in all required fields"); return }
-    if (!allItemsChecked) { toast.error("Please check all inspection items"); return }
-    if (!signatureImage) { toast.error("Please provide your signature"); return }
+    if (!formData.operatorName || !formData.unitNumber) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+    if (!allItemsChecked) {
+      toast.error("Please check all inspection items")
+      return
+    }
+    if (!signatureImage) {
+      toast.error("Please provide your signature")
+      return
+    }
     setIsSubmitting(true)
+
     try {
+      // 1. Submit to internal API (Supabase)
       const response = await fetch("/api/submissions", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        credentials: "include", 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           formType: "bell-timber-truck",
           formTitle: "Bell Timber Truck Pre-Shift Checklist",
           submittedBy: formData.operatorName,
           hasDefects,
           brand: brand,
-          data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
+          data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage }
         })
       })
-      
-      if (!response.ok) {
-        throw new Error("Failed to submit checklist")
-      }
 
-      // --- Send data to Make webhook (DocuWare integration) ---
-      // Replace with your actual Make webhook URL.
-      // It's recommended to store this in an environment variable: process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
-      const makeWebhookUrl = "https://hook.eu2.make.com/jpe5eihs8nh1gacuxe745c2uig0js9n0"
-      
-      const makePayload = {
-        formType: "bell-timber-truck",
-        formTitle: "Bell Timber Truck Pre-Shift Checklist",
-        submittedBy: formData.operatorName,
-        submittedAt: new Date().toISOString(),
-        brand,
-        documentNo,               // the placeholder number (or the actual one if you fetch it from the API response)
-        hasDefects,
-        defectDetails,
-        inspectionData: {
-          ...formData,
-          items,                  // items object with status for each inspection item
-        },
-      }
+      if (!response.ok) throw new Error("Failed to submit checklist")
 
-      // Fire‑and‑forget – do not await, so the user is not delayed.
-      fetch(makeWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(makePayload),
-      }).catch(err => console.error("Make webhook error:", err))
+      // 2. Prepare and send multipart/form-data to Make webhook
+      const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+      if (makeWebhookUrl && signatureImage) {
+        // Convert base64 signature to Blob
+        const blob = await fetch(signatureImage).then(res => res.blob())
+
+        const formData = new FormData()
+
+        // Append metadata as a JSON string
+        formData.append('metadata', JSON.stringify({
+          formTitle: "Bell Timber Truck Pre-Shift Checklist",
+          documentNo,
+          brand,
+          submittedBy: formData.operatorName,
+          submittedAt: new Date().toISOString(),
+          hasDefects,
+          defectDetails,
+          inspectionData: items,
+          ...formData, // includes shift, date, hourMeterStart, hourMeterStop, validTrainingCard, unitNumber
+        }))
+
+        // Append signature as a file
+        formData.append('signature', blob, `signature_${documentNo}.png`)
+
+        // Fire‑and‑forget
+        fetch(makeWebhookUrl, {
+          method: 'POST',
+          body: formData,
+        }).catch(err => console.error('Webhook error:', err))
+      }
 
       toast.success("Checklist submitted successfully!")
       router.push("/")
