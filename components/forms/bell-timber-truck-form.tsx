@@ -283,7 +283,6 @@ export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
     setIsSubmitting(true)
 
     try {
-      // 1. Submit to internal API (Supabase)
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -298,18 +297,15 @@ export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
         })
       })
 
-      if (!response.ok) throw new Error("Failed to submit checklist")
+      if (!response.ok) {
+        throw new Error("Failed to submit checklist")
+      }
 
-      // 2. Prepare and send multipart/form-data to Make webhook
+      // --- Webhook call (fire‑and‑forget) ---
       const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
-      if (makeWebhookUrl && signatureImage) {
-        // Convert base64 signature to Blob
-        const blob = await fetch(signatureImage).then(res => res.blob())
-
-        const formData = new FormData()
-
-        // Append metadata as a JSON string
-        formData.append('metadata', JSON.stringify({
+      if (makeWebhookUrl) {
+        // Send a direct JSON object – Make will generate the PDF and store it in DocuWare
+        const payload = {
           formTitle: "Bell Timber Truck Pre-Shift Checklist",
           documentNo,
           brand,
@@ -318,16 +314,14 @@ export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
           hasDefects,
           defectDetails,
           inspectionData: items,
-          ...formData, // includes shift, date, hourMeterStart, hourMeterStop, validTrainingCard, unitNumber
-        }))
+          ...formData,          // includes operatorName, shift, date, hourMeterStart, hourMeterStop, validTrainingCard, unitNumber
+          signature: signatureImage, // base64 image
+        }
 
-        // Append signature as a file
-        formData.append('signature', blob, `signature_${documentNo}.png`)
-
-        // Fire‑and‑forget
         fetch(makeWebhookUrl, {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         }).catch(err => console.error('Webhook error:', err))
       }
 
