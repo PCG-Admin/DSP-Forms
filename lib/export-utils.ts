@@ -1335,35 +1335,27 @@ const brandLogoFile: Record<Brand, string> = {
 
 async function getBrandLogoBase64(brand: Brand): Promise<string> {
   const filename = brandLogoFile[brand];
-  const mime = filename.endsWith('.png') ? 'png' : 'jpeg';
   try {
+    let baseUrl = '';
     if (typeof window === 'undefined') {
-      const fs = await import('fs');
-      const path = await import('path');
-      const logoPath = path.join(process.cwd(), 'public', 'images', filename);
-      if (fs.existsSync(logoPath)) {
-        const logoBuffer = fs.readFileSync(logoPath);
-        return `data:image/${mime};base64,${logoBuffer.toString('base64')}`;
+      if (process.env.VERCEL_URL) {
+        baseUrl = `https://${process.env.VERCEL_URL}`;
+      } else {
+        baseUrl = 'http://localhost:3000';
       }
-      // Filesystem unavailable (e.g. Vercel) – fetch via HTTP
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/images/${filename}`);
-      if (!response.ok) return '';
-      const buffer = await response.arrayBuffer();
-      return `data:image/${mime};base64,${Buffer.from(buffer).toString('base64')}`;
     } else {
-      const response = await fetch(`/images/${filename}`);
-      if (!response.ok) return '';
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      baseUrl = '';
     }
+    const url = `${baseUrl}/images/${filename}`;
+    const response = await fetch(url);
+    if (!response.ok) return '';
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   } catch (error) {
     console.error(`Failed to load image ${filename}:`, error);
     return '';
