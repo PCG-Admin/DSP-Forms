@@ -893,8 +893,8 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
 
   const filtered = submissions.filter((s) => {
     const matchesSearch =
-      s.submittedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.formTitle.toLowerCase().includes(searchQuery.toLowerCase())
+      (s.submittedBy ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.formTitle ?? '').toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = typeFilter === "all" || (s.formType as string) === typeFilter
     const matchesDefect =
       defectFilter === "all" ||

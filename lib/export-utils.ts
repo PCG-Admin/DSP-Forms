@@ -1435,7 +1435,7 @@ export function exportSingleSubmissionToCSV(sub: Submission): void {
 // ============================================================================
 // PDF EXPORT – with support for Cintasign and lowbed‑stepdeck forms
 // ============================================================================
-export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
+export async function exportSubmissionToPDF(sub: Submission, asBuffer?: boolean): Promise<void | Buffer> {
   const { default: jsPDF } = await import("jspdf")
   await import("jspdf-autotable")
 
@@ -2553,6 +2553,9 @@ export async function exportSubmissionToPDF(sub: Submission): Promise<void> {
   }
 
   const filename: string = `${brand}-${sub.formType}-${sub.submittedBy.replace(/\s/g, "_")}-${sub.id.slice(0, 8)}.pdf`
+  if (asBuffer) {
+    return Buffer.from(doc.output('arraybuffer'))
+  }
   doc.save(filename)
 }
 

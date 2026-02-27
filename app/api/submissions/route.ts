@@ -2,7 +2,7 @@ export const runtime = "nodejs"
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { PDFDocument, StandardFonts } from 'pdf-lib'
+import { exportSubmissionToPDF } from '@/lib/export-utils'
 
 const ALLOWED_BRANDS = ['ringomode', 'cintasign'] as const
 
@@ -38,127 +38,6 @@ async function getNextDocumentNumber(
   throw new Error('Failed to generate document number')
 }
 
-// ============================================================================
-// PDF Generator – now includes all inspection data with error recovery & validation
-// ============================================================================
-async function generatePdf(
-  formType: string,
-  data: any,
-  documentNo: string
-): Promise<Buffer> {
-  const pdfDoc = await PDFDocument.create()
-  let page = pdfDoc.addPage([595, 842])
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-
-  let y = 800
-  const margin = 50
-  const lineHeight = 14
-
-  const drawText = (text: string, size = 10, x = margin, isBold = false) => {
-    try {
-      page.drawText(text, { x, y, size, font: isBold ? bold : font })
-    } catch (e) {
-      console.error('Error drawing text:', text, e)
-    }
-    y -= size + 4
-  }
-
-  // Header
-  drawText(formType.replace(/-/g, ' ') + ' Checklist', 16, margin, true)
-  y -= 5
-  drawText(`Document No: ${documentNo}`, 10, margin)
-  drawText(`Date: ${data.date || new Date().toLocaleDateString()}`, 10, margin)
-  y -= 10
-
-  // Operator Information (two columns)
-  drawText('Operator Information', 12, margin, true)
-  y -= 5
-
-  const fields = [
-    ['Operator Name', data.operatorName || data.driverName || data.userName || ''],
-    ['Shift', data.shift || ''],
-    ['Unit Number', data.unitNumber || ''],
-    ['Hour Meter Start', data.hourMeterStart || ''],
-    ['Hour Meter Stop', data.hourMeterStop || ''],
-    ['Valid Training Card', data.validTrainingCard || ''],
-    ['Defects', data.defectDetails || 'None'],
-  ]
-
-  const col1X = margin
-  const col2X = 300
-
-  for (let i = 0; i < fields.length; i += 2) {
-    const [label1, value1] = fields[i]
-    const [label2, value2] = fields[i + 1] || ['', '']
-    page.drawText(`${label1}: ${value1}`, { x: col1X, y, size: 10, font })
-    if (label2) page.drawText(`${label2}: ${value2}`, { x: col2X, y, size: 10, font })
-    y -= lineHeight
-  }
-  y -= 10
-
-  // Inspection Items (table)
-  drawText('Inspection Items', 12, margin, true)
-  y -= 5
-  page.drawText('Item', { x: margin, y, size: 10, font: bold })
-  page.drawText('Status', { x: 400, y, size: 10, font: bold })
-  y -= lineHeight
-
-  if (data.items && Object.keys(data.items).length > 0) {
-    for (const [key, value] of Object.entries(data.items)) {
-      if (y < 100) {
-        page = pdfDoc.addPage([595, 842])
-        y = 800
-      }
-      page.drawText(key, { x: margin, y, size: 9, font })
-      page.drawText(String(value), { x: 400, y, size: 9, font })
-      y -= lineHeight - 2
-    }
-  } else {
-    page.drawText('No inspection items', { x: margin, y, size: 10, font })
-    y -= lineHeight
-  }
-  y -= 10
-
-  // Signature – with error recovery
-  if (data.signature) {
-    try {
-      const base64Data = data.signature.split(',')[1]
-      if (!base64Data) throw new Error('Invalid base64 signature')
-      const signatureImage = await pdfDoc.embedPng(Buffer.from(base64Data, 'base64'))
-      drawText('Signature:', 12, margin, true)
-      y -= 5
-      page.drawImage(signatureImage, { x: margin, y: y - 60, width: 200, height: 60 })
-    } catch (e) {
-      console.error('❌ Signature embedding failed – continuing without signature:', e)
-      drawText('Signature: (failed to embed)', 10, margin)
-    }
-  }
-
-  // --- Save and validate the PDF ---
-  const pdfBytes = await pdfDoc.save()
-  console.log('✅ Raw PDF length:', pdfBytes.length)
-
-  try {
-    await PDFDocument.load(pdfBytes)
-    console.log('✅ PDF validation passed – file is structurally sound')
-  } catch (validateErr) {
-    console.error('❌ PDF validation FAILED – generated file is corrupt:', validateErr)
-    // Fallback: return a minimal valid PDF
-    const fallbackDoc = await PDFDocument.create()
-    const fallbackPage = fallbackDoc.addPage([595, 842])
-    fallbackPage.drawText('Error generating complete PDF. Please contact support.', {
-      x: 50,
-      y: 400,
-      size: 12,
-      font: await fallbackDoc.embedFont(StandardFonts.Helvetica),
-    })
-    const fallbackBytes = await fallbackDoc.save()
-    return Buffer.from(fallbackBytes)
-  }
-
-  return Buffer.from(pdfBytes)
-}
 
 // ============================================================================
 // GET handler
@@ -231,14 +110,20 @@ export async function POST(request: Request) {
     // ===============================
     // Generate full PDF
     // ===============================
-    const pdfBuffer = await generatePdf(body.formType, body.data, documentNo)
-    const hexString = pdfBuffer.toString('hex')
-
-    const mergedPdf = {
-      name: 'merged-documents.pdf',
-      mime: 'application/pdf',
-      data: `IMTBuffer(${pdfBuffer.length}, binary, ${hexString.slice(0, 32)}): ${hexString}`
+    const submission = {
+      id: inserted.id,
+      formType: inserted.form_type,
+      formTitle: inserted.form_title,
+      submittedBy: inserted.submitted_by,
+      submittedAt: inserted.submitted_at,
+      data: inserted.data,
+      hasDefects: inserted.has_defects,
+      brand: inserted.brand,
+      isRead: inserted.is_read,
+      userId: inserted.user_id,
+      documentNo: inserted.document_no,
     }
+    const pdfBuffer = await exportSubmissionToPDF(submission as any, true) as Buffer
 
     // ===============================
     // Send to Make
@@ -250,21 +135,25 @@ export async function POST(request: Request) {
       console.error("❌ MAKE WEBHOOK URL NOT SET")
     } else {
       try {
-        const payload = {
-          documentNo,
-          formTitle: body.formTitle,
-          brand,
-          submittedBy: body.submittedBy,
-          submittedAt: new Date().toISOString(),
-          mergedPdf
-        }
+        const formData = new FormData()
+        formData.append('documentNo', documentNo)
+        formData.append('formTitle', body.formTitle)
+        formData.append('brand', brand)
+        formData.append('submittedBy', body.submittedBy)
+        formData.append('submittedAt', new Date().toISOString())
+        formData.append('mergedPdf[name]', 'merged-documents.pdf')
+        formData.append('mergedPdf[mime]', 'application/pdf')
+        formData.append(
+          'mergedPdf[data]',
+          new Blob([new Uint8Array(pdfBuffer)], { type: 'application/pdf' }),
+          'merged-documents.pdf'
+        )
 
         console.log("📤 Sending to Make...")
 
         const makeResponse = await fetch(makeWebhookUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: formData,
         })
 
         console.log("📡 Make status:", makeResponse.status)
