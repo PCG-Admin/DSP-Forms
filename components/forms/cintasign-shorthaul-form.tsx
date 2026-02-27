@@ -31,7 +31,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
         day: "",
         farm: "",
         automaticNumber: "",
-        unit: "CNT2" as CintasignUnit,
+        unit: "", // start empty
         fleetEntries: Array(8).fill(null).map(() => ({
             fleetNo: "", operator: "", shift: "", compartment: "", noOfLoads: "", estTons: "",
             hoursOpen: "", hoursClose: "", hoursWorked: "", loadsPerHour: "", tonsPerHour: ""
@@ -234,8 +234,13 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                     </div>
                     <div className="space-y-2">
                         <Label>Cintasign Unit</Label>
-                        <Select value={formData.unit} onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v as CintasignUnit }))}>
-                            <SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger>
+                        <Select 
+                            value={formData.unit} 
+                            onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v }))}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
                             <SelectContent>
                                 {CINTASIGN_UNITS.map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
                             </SelectContent>

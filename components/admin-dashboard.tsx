@@ -246,66 +246,106 @@ function formatFieldKey(key: string): string {
 }
 
 // ============================================================================
-// REPORTS COMPONENT – updated for 24 form types with proper spacing
+// REPORTS COMPONENT – Ultra‑defensive, no crashes
 // ============================================================================
 function AdminReports({ submissions }: { submissions: Submission[] }) {
   const [dateRange, setDateRange] = useState<"7" | "30" | "all">("30");
 
-  // Filter submissions by date range
+  // Ensure submissions is an array
+  const safeSubmissions = useMemo(() => {
+    return Array.isArray(submissions) ? submissions : [];
+  }, [submissions]);
+
+  // Filter submissions by date range, skipping invalid dates
   const filteredSubs = useMemo(() => {
-    if (dateRange === "all") return submissions;
+    if (dateRange === "all") return safeSubmissions;
+
     const days = parseInt(dateRange);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    return submissions.filter(s => new Date(s.submittedAt) >= cutoff);
-  }, [submissions, dateRange]);
 
-  // 1. Daily submissions
-  const dailyData = useMemo(() => {
-    const map = new Map<string, number>();
-    filteredSubs.forEach(sub => {
-      const date = new Date(sub.submittedAt).toLocaleDateString("en-ZA");
-      map.set(date, (map.get(date) || 0) + 1);
+    return safeSubmissions.filter(s => {
+      if (!s?.submittedAt) return false;
+      const date = new Date(s.submittedAt);
+      return !isNaN(date.getTime()) && date >= cutoff;
     });
-    return Array.from(map.entries())
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [safeSubmissions, dateRange]);
+
+  // 1. Daily submissions – only include valid dates
+  const dailyData = useMemo(() => {
+    try {
+      const map = new Map<string, number>();
+      filteredSubs.forEach(sub => {
+        if (!sub?.submittedAt) return;
+        const date = new Date(sub.submittedAt);
+        if (isNaN(date.getTime())) return;
+        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        map.set(dateStr, (map.get(dateStr) || 0) + 1);
+      });
+      return Array.from(map.entries())
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+    } catch (e) {
+      console.error("Error building daily data:", e);
+      return [];
+    }
   }, [filteredSubs]);
 
   // 2. Defect vs Clean
   const defectCleanData = useMemo(() => {
-    const defect = filteredSubs.filter(s => s.hasDefects).length;
-    const clean = filteredSubs.filter(s => !s.hasDefects).length;
-    return [
-      { name: "Clean", value: clean, color: "#22c55e" },
-      { name: "Defect", value: defect, color: "#ef4444" },
-    ];
+    try {
+      const defect = filteredSubs.filter(s => s?.hasDefects === true).length;
+      const clean = filteredSubs.filter(s => s?.hasDefects === false).length;
+      return [
+        { name: "Clean", value: clean, color: "#22c55e" },
+        { name: "Defect", value: defect, color: "#ef4444" },
+      ];
+    } catch (e) {
+      console.error("Error building defect data:", e);
+      return [
+        { name: "Clean", value: 0, color: "#22c55e" },
+        { name: "Defect", value: 0, color: "#ef4444" },
+      ];
+    }
   }, [filteredSubs]);
 
-  // 3. Form type distribution – ALL forms (24)
+  // 3. Form type distribution
   const formTypeData = useMemo(() => {
-    const map = new Map<string, number>();
-    filteredSubs.forEach(sub => {
-      const label = formTypeLabel(sub.formType);
-      map.set(label, (map.get(label) || 0) + 1);
-    });
-    // Convert to array and sort alphabetically
-    return Array.from(map.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    try {
+      const map = new Map<string, number>();
+      filteredSubs.forEach(sub => {
+        if (!sub?.formType) return;
+        const label = formTypeLabel(sub.formType);
+        map.set(label, (map.get(label) || 0) + 1);
+      });
+      return Array.from(map.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    } catch (e) {
+      console.error("Error building form type data:", e);
+      return [];
+    }
   }, [filteredSubs]);
 
   // 4. Brand distribution
   const brandData = useMemo(() => {
-    const ringo = filteredSubs.filter(s => (s.brand || 'ringomode') === 'ringomode').length;
-    const cinta = filteredSubs.filter(s => s.brand === 'cintasign').length;
-    return [
-      { name: "Ringomode DSP", value: ringo, color: "#3b82f6" },
-      { name: "Cintasign", value: cinta, color: "#f59e0b" },
-    ];
+    try {
+      const ringo = filteredSubs.filter(s => (s?.brand || 'ringomode') === 'ringomode').length;
+      const cinta = filteredSubs.filter(s => s?.brand === 'cintasign').length;
+      return [
+        { name: "Ringomode DSP", value: ringo, color: "#3b82f6" },
+        { name: "Cintasign", value: cinta, color: "#f59e0b" },
+      ];
+    } catch (e) {
+      console.error("Error building brand data:", e);
+      return [
+        { name: "Ringomode DSP", value: 0, color: "#3b82f6" },
+        { name: "Cintasign", value: 0, color: "#f59e0b" },
+      ];
+    }
   }, [filteredSubs]);
 
-  // Colors for form type chart (24 distinct colors)
+  // Colors for form type chart
   const formColors = [
     "#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c",
     "#d0ed57", "#8dd1e1", "#b0e57c", "#f5b7b1", "#d7bde2",
@@ -313,6 +353,18 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
     "#ec7063", "#f8c471", "#f0b27a", "#a569bd", "#5dade2",
     "#48c9b0", "#e67e22", "#2ecc71", "#e74c3c"
   ];
+
+  // If no data, show empty state
+  if (filteredSubs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <ClipboardList className="mb-3 h-10 w-10 text-muted-foreground/40" />
+        <p className="text-sm font-medium text-muted-foreground">
+          No submissions found for the selected period.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -370,16 +422,22 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" angle={-45} textAnchor="end" height={60} interval={0} tick={{ fontSize: 10 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#3b82f6" name="Submissions" />
-              </BarChart>
-            </ResponsiveContainer>
+            {dailyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" angle={-45} textAnchor="end" height={60} interval={0} tick={{ fontSize: 10 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" fill="#3b82f6" name="Submissions" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                No daily data
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -395,11 +453,11 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
             <ResponsiveContainer width="100%" height="100%">
               <RePieChart>
                 <Pie
-                  data={defectCleanData}
+                  data={defectCleanData.filter(d => d.value > 0)}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -415,39 +473,45 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
           </CardContent>
         </Card>
 
-        {/* All Form Types – now includes ALL 24 forms */}
+        {/* All Form Types */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <ClipboardList className="h-4 w-4" />
-              All Form Types (24)
+              All Form Types
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[600px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={formTypeData}
-                layout="vertical"
-                margin={{ left: 220, right: 20, top: 20, bottom: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  width={200}
-                  tick={{ fontSize: 10 }}
-                  interval={0}
-                />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="value" fill="#82ca9d" name="Count">
-                  {formTypeData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={formColors[index % formColors.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {formTypeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={formTypeData}
+                  layout="vertical"
+                  margin={{ left: 220, right: 20, top: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    width={200}
+                    tick={{ fontSize: 10 }}
+                    interval={0}
+                  />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#82ca9d" name="Count">
+                    {formTypeData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={formColors[index % formColors.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                No form type data
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -463,11 +527,11 @@ function AdminReports({ submissions }: { submissions: Submission[] }) {
             <ResponsiveContainer width="100%" height="100%">
               <RePieChart>
                 <Pie
-                  data={brandData}
+                  data={brandData.filter(d => d.value > 0)}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -891,17 +955,20 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
     fetchSubmissions()
   }, [fetchSubmissions])
 
+  // Safely handle undefined submittedBy/formTitle
   const filtered = submissions.filter((s) => {
+    const submittedBy = s.submittedBy || '';
+    const formTitle = s.formTitle || '';
     const matchesSearch =
-      (s.submittedBy ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.formTitle ?? '').toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = typeFilter === "all" || (s.formType as string) === typeFilter
+      submittedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      formTitle.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = typeFilter === "all" || (s.formType as string) === typeFilter;
     const matchesDefect =
       defectFilter === "all" ||
       (defectFilter === "defects" && s.hasDefects) ||
-      (defectFilter === "clean" && !s.hasDefects)
-    return matchesSearch && matchesType && matchesDefect
-  })
+      (defectFilter === "clean" && !s.hasDefects);
+    return matchesSearch && matchesType && matchesDefect;
+  });
 
   const totalSubmissions = submissions.length
   const defectCount = submissions.filter((s) => s.hasDefects).length

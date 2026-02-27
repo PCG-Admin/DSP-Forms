@@ -52,7 +52,22 @@ export async function GET() {
   if (error) {
     return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 })
   }
-  return NextResponse.json(data)
+
+  // Transform snake_case to camelCase
+  const transformed = data?.map((item: any) => ({
+    id: item.id,
+    formType: item.form_type,
+    formTitle: item.form_title,
+    submittedBy: item.submitted_by,
+    submittedAt: item.submitted_at,
+    data: item.data,
+    hasDefects: item.has_defects,
+    brand: item.brand,
+    isRead: item.is_read,
+    documentNo: item.document_no,
+  })) || [];
+
+  return NextResponse.json(transformed)
 }
 
 // ============================================================================

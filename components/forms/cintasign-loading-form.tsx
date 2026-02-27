@@ -39,7 +39,7 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
         day: "",
         farm: "",
         automaticNumber: "",
-        unit: "CNT3" as CintasignUnit,
+        unit: "", // start empty
         operator: "",
         fleetNo: "",
         shift: "",
@@ -250,7 +250,10 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <div className="space-y-2">
                             <Label htmlFor="unit">Cintasign Unit</Label>
-                            <Select value={formData.unit} onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v as CintasignUnit }))}>
+                            <Select 
+                                value={formData.unit} 
+                                onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v }))}
+                            >
                                 <SelectTrigger id="unit">
                                     <SelectValue placeholder="Select unit" />
                                 </SelectTrigger>

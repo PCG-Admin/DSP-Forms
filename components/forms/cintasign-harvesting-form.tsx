@@ -45,7 +45,7 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
         day: "",
         farm: "",
         automaticNumber: "", // will be filled after fetch
-        unit: "CNT1" as CintasignUnit,
+        unit: "", // start empty
         fleetEntries: Array(8).fill(null).map(() => ({
             fleetNo: "", operator: "", shift: "", compartment: "", treeVolume: "", treesDebarked: "", totalTons: "",
             hoursOpen: "", hoursClose: "", hoursWorked: "", tonsPerHour: "", treesPerHour: ""
@@ -252,16 +252,24 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
                     </div>
                     <div className="space-y-2">
                         <Label>Cintasign Unit</Label>
-                        <Select value={formData.unit} onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v as CintasignUnit }))}>
-                            <SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger>
+                        <Select 
+                            value={formData.unit} 
+                            onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v }))}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
                             <SelectContent>
-                                {CINTASIGN_UNITS.map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
+                                {CINTASIGN_UNITS.map(unit => (
+                                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
                 </CardContent>
             </Card>
 
+            {/* Rest of the form unchanged */}
             {/* Harvesting Fleet Entries */}
             <Card>
                 <CardHeader>
