@@ -1546,6 +1546,7 @@ export async function exportSubmissionToPDF(sub: Submission, asBuffer?: boolean)
     // ----- Common fields table (submittedBy, date, and basic fields) -----
     const fieldRows: string[][] = []
     fieldRows.push(["Submitted By", sub.submittedBy])
+    fieldRows.push(["Document No", (sub as any).documentNo || ""]) // <-- ADDED THIS LINE
     const formattedDate = new Date(sub.submittedAt).toLocaleDateString("en-ZA", {
       year: "numeric",
       month: "long",
