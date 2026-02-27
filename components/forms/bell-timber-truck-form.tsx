@@ -283,6 +283,7 @@ export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
     setIsSubmitting(true)
 
     try {
+      // Submit to internal API (Supabase) – the backend will also generate PDF and send to Make
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -299,30 +300,6 @@ export function BellTimberTruckForm({ brand }: BellTimberTruckFormProps) {
 
       if (!response.ok) {
         throw new Error("Failed to submit checklist")
-      }
-
-      // --- Webhook call (fire‑and‑forget) ---
-      const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
-      if (makeWebhookUrl) {
-        // Send a direct JSON object – Make will generate the PDF and store it in DocuWare
-        const payload = {
-          formTitle: "Bell Timber Truck Pre-Shift Checklist",
-          documentNo,
-          brand,
-          submittedBy: formData.operatorName,
-          submittedAt: new Date().toISOString(),
-          hasDefects,
-          defectDetails,
-          inspectionData: items,
-          ...formData,          // includes operatorName, shift, date, hourMeterStart, hourMeterStop, validTrainingCard, unitNumber
-          signature: signatureImage, // base64 image
-        }
-
-        fetch(makeWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }).catch(err => console.error('Webhook error:', err))
       }
 
       toast.success("Checklist submitted successfully!")
