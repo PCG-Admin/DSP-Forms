@@ -1179,9 +1179,18 @@ async function getImageBase64(filename: string): Promise<string | null> {
       // Filesystem unavailable (e.g. Vercel) – fetch via HTTP
       const baseUrl = process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/images/${filename}`);
-      if (!response.ok) return null;
+        : process.env.NEXT_PUBLIC_APP_URL || '';
+      if (!baseUrl) {
+        console.error(`[PDF] No baseUrl for image fetch – set NEXT_PUBLIC_APP_URL in Vercel env vars`);
+        return null;
+      }
+      const url = `${baseUrl}/images/${filename}`;
+      console.log(`[PDF] Fetching image via HTTP: ${url}`);
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error(`[PDF] HTTP fetch failed for ${filename}: ${response.status} ${response.statusText}`);
+        return null;
+      }
       const buffer = await response.arrayBuffer();
       return `data:image/png;base64,${Buffer.from(buffer).toString('base64')}`;
     } else {
@@ -1350,9 +1359,18 @@ async function getBrandLogoBase64(brand: Brand): Promise<string> {
       // Filesystem unavailable (e.g. Vercel) – fetch via HTTP
       const baseUrl = process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/images/${filename}`);
-      if (!response.ok) return '';
+        : process.env.NEXT_PUBLIC_APP_URL || '';
+      if (!baseUrl) {
+        console.error(`[PDF] No baseUrl for logo fetch – set NEXT_PUBLIC_APP_URL in Vercel env vars`);
+        return '';
+      }
+      const url = `${baseUrl}/images/${filename}`;
+      console.log(`[PDF] Fetching logo via HTTP: ${url}`);
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error(`[PDF] HTTP fetch failed for logo ${filename}: ${response.status} ${response.statusText}`);
+        return '';
+      }
       const buffer = await response.arrayBuffer();
       return `data:image/${mime};base64,${Buffer.from(buffer).toString('base64')}`;
     } else {
