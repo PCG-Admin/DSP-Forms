@@ -1169,17 +1169,33 @@ function getIconMapForForm(formType: string): Record<string, string> | null {
 async function getImageBase64(filename: string): Promise<string | null> {
   try {
     if (typeof window === 'undefined') {
-      // Server side – read directly from filesystem (works on Vercel and locally)
-      // @ts-ignore – fs/promises and path are Node.js built-ins available at runtime
-      const { readFile } = await import('fs/promises');
-      // @ts-ignore
-      const { join } = await import('path');
-      const imagePath = join(process.cwd(), 'public', 'images', filename);
-      const imageBuffer = await readFile(imagePath);
-      const base64 = imageBuffer.toString('base64');
-      const ext = filename.split('.').pop()?.toLowerCase();
-      const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
-      return `data:${mimeType};base64,${base64}`;
+      // Server side – use eval('require') so webpack cannot intercept or neuter
+      // the Node.js built-in, even when this file is also bundled for the client.
+      try {
+        // eslint-disable-next-line no-eval
+        const fs = eval("require")('fs') as { readFileSync: (p: string) => Buffer };
+        // eslint-disable-next-line no-eval
+        const path = eval("require")('path') as { join: (...p: string[]) => string };
+        const imagePath = path.join(process.cwd(), 'public', 'images', filename);
+        console.log(`[PDF] Reading image from filesystem: ${imagePath}`);
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64 = imageBuffer.toString('base64');
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+        return `data:${mimeType};base64,${base64}`;
+      } catch (fsError) {
+        // Filesystem read failed – fall back to HTTP (e.g. public/ not on the function FS)
+        console.error(`[PDF] Filesystem read failed for ${filename}:`, fsError);
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+          || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+        console.log(`[PDF] Falling back to HTTP: ${baseUrl}/images/${filename}`);
+        const res = await fetch(`${baseUrl}/images/${filename}`);
+        if (!res.ok) { console.error(`[PDF] HTTP fetch failed (${res.status}) for ${filename}`); return null; }
+        const buf = Buffer.from(await res.arrayBuffer());
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+        return `data:${mimeType};base64,${buf.toString('base64')}`;
+      }
     } else {
       // Client side – use fetch + FileReader
       const response = await fetch(`/images/${filename}`);
@@ -1193,7 +1209,7 @@ async function getImageBase64(filename: string): Promise<string | null> {
       });
     }
   } catch (error) {
-    console.error(`Failed to load image ${filename}:`, error);
+    console.error(`[PDF] Failed to load image ${filename}:`, error);
     return null;
   }
 }
@@ -1336,17 +1352,32 @@ async function getBrandLogoBase64(brand: Brand): Promise<string> {
   const filename = brandLogoFile[brand];
   try {
     if (typeof window === 'undefined') {
-      // Server side – read directly from filesystem (works on Vercel and locally)
-      // @ts-ignore – fs/promises and path are Node.js built-ins available at runtime
-      const { readFile } = await import('fs/promises');
-      // @ts-ignore
-      const { join } = await import('path');
-      const imagePath = join(process.cwd(), 'public', 'images', filename);
-      const imageBuffer = await readFile(imagePath);
-      const base64 = imageBuffer.toString('base64');
-      const ext = filename.split('.').pop()?.toLowerCase();
-      const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
-      return `data:${mimeType};base64,${base64}`;
+      // Server side – use eval('require') so webpack cannot intercept or neuter
+      // the Node.js built-in, even when this file is also bundled for the client.
+      try {
+        // eslint-disable-next-line no-eval
+        const fs = eval("require")('fs') as { readFileSync: (p: string) => Buffer };
+        // eslint-disable-next-line no-eval
+        const path = eval("require")('path') as { join: (...p: string[]) => string };
+        const imagePath = path.join(process.cwd(), 'public', 'images', filename);
+        console.log(`[PDF] Reading logo from filesystem: ${imagePath}`);
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64 = imageBuffer.toString('base64');
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+        return `data:${mimeType};base64,${base64}`;
+      } catch (fsError) {
+        console.error(`[PDF] Filesystem read failed for logo ${filename}:`, fsError);
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+          || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+        console.log(`[PDF] Falling back to HTTP: ${baseUrl}/images/${filename}`);
+        const res = await fetch(`${baseUrl}/images/${filename}`);
+        if (!res.ok) { console.error(`[PDF] HTTP fetch failed (${res.status}) for logo ${filename}`); return ''; }
+        const buf = Buffer.from(await res.arrayBuffer());
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+        return `data:${mimeType};base64,${buf.toString('base64')}`;
+      }
     } else {
       // Client side – use fetch + FileReader
       const response = await fetch(`/images/${filename}`);
@@ -1360,7 +1391,7 @@ async function getBrandLogoBase64(brand: Brand): Promise<string> {
       });
     }
   } catch (error) {
-    console.error(`Failed to load image ${filename}:`, error);
+    console.error(`[PDF] Failed to load logo ${filename}:`, error);
     return '';
   }
 }
