@@ -1169,19 +1169,19 @@ function getIconMapForForm(formType: string): Record<string, string> | null {
 async function getImageBase64(filename: string): Promise<string | null> {
   try {
     if (typeof window === 'undefined') {
-      // Server side (Node.js) – FileReader is not available; use Buffer instead
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/images/${filename}`);
-      if (!response.ok) return null;
-      const arrayBuffer = await response.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      // Server side – read directly from filesystem (works on Vercel and locally)
+      // @ts-ignore – fs/promises and path are Node.js built-ins available at runtime
+      const { readFile } = await import('fs/promises');
+      // @ts-ignore
+      const { join } = await import('path');
+      const imagePath = join(process.cwd(), 'public', 'images', filename);
+      const imageBuffer = await readFile(imagePath);
+      const base64 = imageBuffer.toString('base64');
       const ext = filename.split('.').pop()?.toLowerCase();
       const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
       return `data:${mimeType};base64,${base64}`;
     } else {
-      // Client side – use FileReader/Blob
+      // Client side – use fetch + FileReader
       const response = await fetch(`/images/${filename}`);
       if (!response.ok) return null;
       const blob = await response.blob();
@@ -1336,19 +1336,19 @@ async function getBrandLogoBase64(brand: Brand): Promise<string> {
   const filename = brandLogoFile[brand];
   try {
     if (typeof window === 'undefined') {
-      // Server side (Node.js) – FileReader is not available; use Buffer instead
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/images/${filename}`);
-      if (!response.ok) return '';
-      const arrayBuffer = await response.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      // Server side – read directly from filesystem (works on Vercel and locally)
+      // @ts-ignore – fs/promises and path are Node.js built-ins available at runtime
+      const { readFile } = await import('fs/promises');
+      // @ts-ignore
+      const { join } = await import('path');
+      const imagePath = join(process.cwd(), 'public', 'images', filename);
+      const imageBuffer = await readFile(imagePath);
+      const base64 = imageBuffer.toString('base64');
       const ext = filename.split('.').pop()?.toLowerCase();
       const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
       return `data:${mimeType};base64,${base64}`;
     } else {
-      // Client side – use FileReader/Blob
+      // Client side – use fetch + FileReader
       const response = await fetch(`/images/${filename}`);
       if (!response.ok) return '';
       const blob = await response.blob();
