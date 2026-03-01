@@ -156,6 +156,8 @@ export async function POST(request: Request) {
         formData.append('brand', brand)
         formData.append('submittedBy', body.submittedBy)
         formData.append('submittedAt', new Date().toISOString())
+        formData.append('hasDefects', body.hasDefects ? 'true' : 'false')
+        formData.append('defectDetails', body.hasDefects && body.data?.defectDetails ? body.data.defectDetails : '')
         formData.append('mergedPdf[name]', 'merged-documents.pdf')
         formData.append('mergedPdf[mime]', 'application/pdf')
         formData.append(
