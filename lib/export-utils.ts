@@ -1168,31 +1168,30 @@ function getIconMapForForm(formType: string): Record<string, string> | null {
 // ============================================================================
 async function getImageBase64(filename: string): Promise<string | null> {
   try {
-    // Determine base URL
-    let baseUrl = '';
     if (typeof window === 'undefined') {
-      // Server side (Node.js)
-      if (process.env.VERCEL_URL) {
-        // On Vercel, use the deployment URL
-        baseUrl = `https://${process.env.VERCEL_URL}`;
-      } else {
-        // Local development – assume default Next.js port
-        baseUrl = 'http://localhost:3000';
-      }
+      // Server side (Node.js) – FileReader is not available; use Buffer instead
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/images/${filename}`);
+      if (!response.ok) return null;
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+      return `data:${mimeType};base64,${base64}`;
     } else {
-      // Client side – use relative path
-      baseUrl = '';
+      // Client side – use FileReader/Blob
+      const response = await fetch(`/images/${filename}`);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
     }
-    const url = `${baseUrl}/images/${filename}`;
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
   } catch (error) {
     console.error(`Failed to load image ${filename}:`, error);
     return null;
@@ -1336,26 +1335,30 @@ const brandLogoFile: Record<Brand, string> = {
 async function getBrandLogoBase64(brand: Brand): Promise<string> {
   const filename = brandLogoFile[brand];
   try {
-    let baseUrl = '';
     if (typeof window === 'undefined') {
-      if (process.env.VERCEL_URL) {
-        baseUrl = `https://${process.env.VERCEL_URL}`;
-      } else {
-        baseUrl = 'http://localhost:3000';
-      }
+      // Server side (Node.js) – FileReader is not available; use Buffer instead
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/images/${filename}`);
+      if (!response.ok) return '';
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+      return `data:${mimeType};base64,${base64}`;
     } else {
-      baseUrl = '';
+      // Client side – use FileReader/Blob
+      const response = await fetch(`/images/${filename}`);
+      if (!response.ok) return '';
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
     }
-    const url = `${baseUrl}/images/${filename}`;
-    const response = await fetch(url);
-    if (!response.ok) return '';
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
   } catch (error) {
     console.error(`Failed to load image ${filename}:`, error);
     return '';
