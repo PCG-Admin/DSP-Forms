@@ -8,13 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -25,44 +22,11 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    if (!isLogin) {
-      if (password !== confirmPassword) {
-        setError('Passwords do not match')
-        setLoading(false)
-        return
-      }
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters')
-        setLoading(false)
-        return
-      }
-    }
-
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-        if (error) throw error
-
-        router.push('/')
-        router.refresh()
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { role: 'user' },
-          },
-        })
-        if (error) throw error
-
-        toast.success('Account created! Please check your email for confirmation.')
-        setIsLogin(true)
-        setPassword('')
-        setConfirmPassword('')
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      router.push('/')
+      router.refresh()
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -74,7 +38,6 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          {/* Logos */}
           <div className="flex items-center justify-center gap-4 mb-4">
             <Image
               src="/images/dsp-logo.png"
@@ -91,12 +54,8 @@ export default function LoginPage() {
               className="object-contain"
             />
           </div>
-          <CardTitle className="text-2xl">{isLogin ? 'Sign In' : 'Create Account'}</CardTitle>
-          <CardDescription>
-            {isLogin
-              ? 'Enter your credentials to access the system'
-              : 'Sign up to start using the inspection checklists'}
-          </CardDescription>
+          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardDescription>Enter your credentials to access the system</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -129,60 +88,10 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
             </div>
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  placeholder="••••••••"
-                />
-              </div>
-            )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Sign Up'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-
-          <div className="mt-4 text-center text-sm">
-            {isLogin ? (
-              <>
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsLogin(false)
-                    setError('')
-                    setPassword('')
-                    setConfirmPassword('')
-                  }}
-                  className="text-primary hover:underline font-medium"
-                >
-                  Sign up
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsLogin(true)
-                    setError('')
-                    setPassword('')
-                    setConfirmPassword('')
-                  }}
-                  className="text-primary hover:underline font-medium"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
-          </div>
         </CardContent>
       </Card>
     </div>

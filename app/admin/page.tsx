@@ -35,10 +35,7 @@ export default async function AdminPage() {
     redirect('/')
   }
 
-  // Get the user's brand (all admins may have a brand? but we'll use it for filtering)
-  const brand = userData.brand || 'ringomode'
-
-  // Fetch submissions from Supabase
+  // Fetch all submissions from Supabase (admins see everything)
   const { data: submissionsData, error: submissionsError } = await supabase
     .from('submissions')
     .select('*')
@@ -61,19 +58,10 @@ export default async function AdminPage() {
     isRead: s.is_read,
   }))
 
-  // Filter submissions by brand.
-  // For backward compatibility, submissions without a brand field are treated as 'ringomode'.
-  const filteredSubmissions = submissions.filter(s => {
-    if (!s.brand) {
-      return brand === 'ringomode'
-    }
-    return s.brand === brand
-  })
-
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader role="admin" />
-      <AdminDashboard initialSubmissions={filteredSubmissions} />
+      <AdminDashboard initialSubmissions={submissions} />
     </div>
   )
 }

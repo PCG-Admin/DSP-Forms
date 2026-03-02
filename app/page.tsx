@@ -23,10 +23,6 @@ export default async function HomePage() {
     redirect('/brand-select')
   }
 
-  if (userData.role === 'admin') {
-    redirect('/admin')
-  }
-
   if (!userData.brand) {
     redirect('/brand-select')
   }
