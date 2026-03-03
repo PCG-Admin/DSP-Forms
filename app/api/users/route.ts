@@ -110,36 +110,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
 
-  const admin = adminClient()
+  try {
+    const admin = adminClient()
 
-  // Create auth user (auto-confirm so they can log in immediately)
-  const { data: authData, error: authError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  })
-  if (authError) {
-    return NextResponse.json({ error: authError.message }, { status: 400 })
+    // Create auth user (auto-confirm so they can log in immediately)
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    })
+    if (authError) {
+      return NextResponse.json({ error: authError.message }, { status: 400 })
+    }
+
+    const userId = authData.user.id
+
+    // Upsert profile row
+    const username = email.split('@')[0]
+    const { error: profileError } = await admin.from('users').upsert({
+      id: userId,
+      username,
+      role: role ?? 'user',
+      brand: brand ?? null,
+    })
+    if (profileError) {
+      // Rollback auth user to avoid orphans
+      await admin.auth.admin.deleteUser(userId)
+      return NextResponse.json({ error: profileError.message }, { status: 500 })
+    }
+
+    logSecurityEvent({ event: 'USER_CREATED', ip, userId: adminUser.id, details: `Created user ${email} with role ${role ?? 'user'}` })
+    return NextResponse.json({ success: true, id: userId }, { status: 201 })
+  } catch (err: any) {
+    console.error('[POST /api/users] Unexpected error:', err)
+    return NextResponse.json({ error: err.message || 'Failed to create user' }, { status: 500 })
   }
-
-  const userId = authData.user.id
-
-  // Upsert profile row
-  const username = email.split('@')[0]
-  const { error: profileError } = await admin.from('users').upsert({
-    id: userId,
-    username,
-    role: role ?? 'user',
-    brand: brand ?? null,
-  })
-  if (profileError) {
-    // Rollback auth user to avoid orphans
-    await admin.auth.admin.deleteUser(userId)
-    return NextResponse.json({ error: profileError.message }, { status: 500 })
-  }
-
-  logSecurityEvent({ event: 'USER_CREATED', ip, userId: adminUser.id, details: `Created user ${email} with role ${role ?? 'user'}` })
-  return NextResponse.json({ success: true, id: userId }, { status: 201 })
 }
 
 // ─── PATCH /api/users ─────────────────────────────────────────────────────────

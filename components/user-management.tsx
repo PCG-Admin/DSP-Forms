@@ -78,7 +78,7 @@ export function UserManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newEmail, password: newPassword, role: newRole, brand: null }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Failed to create user')
       toast.success(`User ${newEmail} created successfully`)
       setCreateOpen(false)
@@ -97,7 +97,7 @@ export function UserManagement() {
     setSubmitting(true)
     try {
       const res = await fetch(`/api/users?id=${deleteTarget.id}`, { method: 'DELETE' })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Failed to delete user')
       toast.success(`User ${deleteTarget.email} deleted`)
       setDeleteTarget(null)
