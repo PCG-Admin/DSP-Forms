@@ -3,9 +3,20 @@ export const runtime = "nodejs"
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { rateLimit, STRICT_LIMIT, getClientIp } from '@/lib/rate-limit'
+import { logSecurityEvent } from '@/lib/security-logger'
 
 const ALLOWED_BRANDS = ['ringomode', 'cintasign'] as const
 const ALLOWED_ROLES  = ['admin', 'user'] as const
+
+/** Enforce password complexity: min 8 chars, upper, lower, digit */
+function validatePassword(password: string): string | null {
+  if (password.length < 8)         return 'Password must be at least 8 characters'
+  if (!/[A-Z]/.test(password))     return 'Password must contain at least one uppercase letter'
+  if (!/[a-z]/.test(password))     return 'Password must contain at least one lowercase letter'
+  if (!/[0-9]/.test(password))     return 'Password must contain at least one number'
+  return null
+}
 
 /** Service-role client – can call auth.admin.* */
 function adminClient() {
@@ -60,7 +71,16 @@ export async function GET() {
 
 // ─── POST /api/users ──────────────────────────────────────────────────────────
 export async function POST(request: Request) {
-  if (!(await requireAdmin())) {
+  const ip = getClientIp(request)
+  const rl = rateLimit(`users:create:${ip}`, STRICT_LIMIT)
+  if (!rl.allowed) {
+    logSecurityEvent({ event: 'RATE_LIMIT_HIT', ip, path: '/api/users', details: 'POST user creation' })
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+  }
+
+  const adminUser = await requireAdmin()
+  if (!adminUser) {
+    logSecurityEvent({ event: 'UNAUTHORIZED_ACCESS', ip, path: '/api/users', details: 'POST without admin role' })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -70,6 +90,19 @@ export async function POST(request: Request) {
   if (!email || !password) {
     return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
   }
+
+  // Validate email format
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    logSecurityEvent({ event: 'INVALID_INPUT', ip, path: '/api/users', details: 'Invalid email format' })
+    return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
+  }
+
+  // Enforce password policy
+  const passwordError = validatePassword(password)
+  if (passwordError) {
+    return NextResponse.json({ error: passwordError }, { status: 400 })
+  }
+
   if (role && !ALLOWED_ROLES.includes(role)) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   }
@@ -105,12 +138,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: profileError.message }, { status: 500 })
   }
 
+  logSecurityEvent({ event: 'USER_CREATED', ip, userId: adminUser.id, details: `Created user ${email} with role ${role ?? 'user'}` })
   return NextResponse.json({ success: true, id: userId }, { status: 201 })
 }
 
 // ─── PATCH /api/users ─────────────────────────────────────────────────────────
 export async function PATCH(request: Request) {
   if (!(await requireAdmin())) {
+    logSecurityEvent({ event: 'UNAUTHORIZED_ACCESS', ip: 'unknown', path: '/api/users', details: 'PATCH without admin role' })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -138,7 +173,10 @@ export async function PATCH(request: Request) {
 
 // ─── DELETE /api/users?id=xxx ─────────────────────────────────────────────────
 export async function DELETE(request: Request) {
-  if (!(await requireAdmin())) {
+  const ip = getClientIp(request)
+  const adminUser = await requireAdmin()
+  if (!adminUser) {
+    logSecurityEvent({ event: 'UNAUTHORIZED_ACCESS', ip, path: '/api/users', details: 'DELETE without admin role' })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -153,5 +191,6 @@ export async function DELETE(request: Request) {
   const { error } = await admin.auth.admin.deleteUser(id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  logSecurityEvent({ event: 'USER_DELETED', ip, userId: adminUser.id, details: `Deleted user id=${id}` })
   return NextResponse.json({ success: true })
 }

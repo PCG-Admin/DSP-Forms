@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CheckCircle2, ArrowLeft, Send } from "lucide-react"
+import { ArrowLeft, Send } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { BrandLogo } from "@/components/brand-logo"
 import { Separator } from "@/components/ui/separator"
@@ -34,6 +35,7 @@ interface CintasignLoadingFormProps {
 }
 
 export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
+    const router = useRouter()
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split("T")[0],
         day: "",
@@ -49,7 +51,6 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
     })
 
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [isSubmitted, setIsSubmitted] = useState(false)
 
     // State for the next document number fetched from server
     const [nextNumber, setNextNumber] = useState<number | null>(null)
@@ -128,38 +129,13 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
                 }).catch(err => console.error('Webhook error:', err))
             }
 
-            setIsSubmitted(true)
             toast.success("Loading report submitted successfully!")
+            router.push('/')
         } catch (error) {
             toast.error("An error occurred. Please try again.")
         } finally {
             setIsSubmitting(false)
         }
-    }
-
-    if (isSubmitted) {
-        return (
-            <div className="flex min-h-[80vh] items-center justify-center p-4">
-                <Card className="w-full max-w-md text-center">
-                    <CardHeader>
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                            <CheckCircle2 className="h-10 w-10 text-green-600" />
-                        </div>
-                        <CardTitle className="text-2xl">Submission Successful!</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">
-                            Your Cintasign Loading report has been recorded.
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            <Button variant="outline" onClick={() => window.location.href = "/"} className="w-full">
-                                Back to Dashboard
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        )
     }
 
     return (

@@ -3,6 +3,8 @@ export const runtime = "nodejs"
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { exportSubmissionToPDF } from '@/lib/export-utils'
+import { rateLimit, STANDARD_LIMIT, getClientIp } from '@/lib/rate-limit'
+import { logSecurityEvent } from '@/lib/security-logger'
 
 const ALLOWED_BRANDS = ['ringomode', 'cintasign'] as const
 
@@ -75,6 +77,15 @@ export async function GET() {
 // ============================================================================
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request)
+
+    // Rate limit: 30 submissions per minute per IP
+    const rl = rateLimit(`submissions:${ip}`, STANDARD_LIMIT)
+    if (!rl.allowed) {
+      logSecurityEvent({ event: 'RATE_LIMIT_HIT', ip, path: '/api/submissions', details: 'POST form submission' })
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+    }
+
     const supabase = createClient()
     const body = await request.json()
 
@@ -82,6 +93,7 @@ export async function POST(request: Request) {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
+      logSecurityEvent({ event: 'UNAUTHORIZED_ACCESS', ip, path: '/api/submissions', details: 'POST without auth' })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -153,7 +165,7 @@ export async function POST(request: Request) {
         const formData = new FormData()
         formData.append('documentNo', documentNo)
         formData.append('formTitle', body.formTitle)
-        formData.append('brand', brand)
+        formData.append('brand', brand.charAt(0).toUpperCase() + brand.slice(1))
         formData.append('submittedBy', body.submittedBy)
         formData.append('submittedAt', new Date().toISOString())
         formData.append('hasDefects', body.hasDefects ? 'Yes' : 'No')

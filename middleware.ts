@@ -63,7 +63,11 @@ export async function middleware(req: NextRequest) {
 
   // All other routes require authentication
   if (!user) {
-    console.log(`[Middleware] No user, redirecting to /login from ${path}`)
+    // Log unauthenticated access attempts to protected routes
+    if (path !== '/' && !path.startsWith('/_next')) {
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('x-real-ip') ?? 'unknown'
+      console.warn('[SECURITY]', JSON.stringify({ event: 'UNAUTHORIZED_ACCESS', ip, path, timestamp: new Date().toISOString() }))
+    }
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
@@ -84,6 +88,8 @@ export async function middleware(req: NextRequest) {
   // Admin route protection
   if (path.startsWith('/admin')) {
     if (userData.role !== 'admin') {
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+      console.warn('[SECURITY]', JSON.stringify({ event: 'UNAUTHORIZED_ACCESS', ip, userId: user.id, path, details: 'Non-admin attempted admin route', timestamp: new Date().toISOString() }))
       return NextResponse.redirect(new URL('/', req.url))
     }
     return res
