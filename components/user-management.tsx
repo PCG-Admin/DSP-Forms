@@ -53,11 +53,11 @@ export function UserManagement() {
     setLoading(true)
     try {
       const res = await fetch('/api/users')
-      if (!res.ok) throw new Error('Failed to fetch users')
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch users')
       setUsers(data)
-    } catch {
-      toast.error('Failed to load users')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load users')
     } finally {
       setLoading(false)
     }

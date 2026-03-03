@@ -43,30 +43,35 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const admin = adminClient()
+  try {
+    const admin = adminClient()
 
-  // Fetch all auth users
-  const { data: authData, error: authError } = await admin.auth.admin.listUsers()
-  if (authError) {
-    return NextResponse.json({ error: authError.message }, { status: 500 })
-  }
-
-  // Fetch all profile rows
-  const { data: profiles } = await admin.from('users').select('id, role, brand')
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]))
-
-  const users = authData.users.map((u: any) => {
-    const profile = profileMap.get(u.id)
-    return {
-      id: u.id,
-      email: u.email,
-      role: profile?.role ?? 'user',
-      brand: profile?.brand ?? null,
-      createdAt: u.created_at,
+    // Fetch all auth users
+    const { data: authData, error: authError } = await admin.auth.admin.listUsers()
+    if (authError) {
+      return NextResponse.json({ error: authError.message }, { status: 500 })
     }
-  })
 
-  return NextResponse.json(users)
+    // Fetch all profile rows
+    const { data: profiles } = await admin.from('users').select('id, role, brand')
+    const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]))
+
+    const users = authData.users.map((u: any) => {
+      const profile = profileMap.get(u.id)
+      return {
+        id: u.id,
+        email: u.email,
+        role: profile?.role ?? 'user',
+        brand: profile?.brand ?? null,
+        createdAt: u.created_at,
+      }
+    })
+
+    return NextResponse.json(users)
+  } catch (err: any) {
+    console.error('[GET /api/users] Unexpected error:', err)
+    return NextResponse.json({ error: err.message || 'Failed to fetch users' }, { status: 500 })
+  }
 }
 
 // ─── POST /api/users ──────────────────────────────────────────────────────────
