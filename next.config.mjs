@@ -1,5 +1,33 @@
 /** @type {import('next').NextConfig} */
+
+const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
+  : '*.supabase.co'
+
+const cspValue = [
+  "default-src 'self'",
+  // Next.js requires unsafe-inline + unsafe-eval for its runtime scripts
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+  // Inline styles are used throughout (Tailwind, shadcn)
+  "style-src 'self' 'unsafe-inline'",
+  // data: for base64 PDF images; blob: for generated PDFs
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  // Supabase REST + Realtime websocket
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+  // No iframes allowed (redundant with X-Frame-Options but belt-and-suspenders)
+  "frame-ancestors 'none'",
+  // Prevent <base> tag injection
+  "base-uri 'self'",
+  // Restrict where forms can submit
+  "form-action 'self'",
+].join('; ')
+
 const securityHeaders = [
+  {
+    key: 'Content-Security-Policy',
+    value: cspValue,
+  },
   // Enforce HTTPS for 2 years (HSTS)
   {
     key: 'Strict-Transport-Security',
