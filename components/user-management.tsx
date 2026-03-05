@@ -91,6 +91,23 @@ export function UserManagement() {
     }
   }
 
+  // ── Change role ────────────────────────────────────────────────────────────
+  const handleRoleChange = async (user: UserRecord, newRole: 'admin' | 'user') => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id, role: newRole }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to update role')
+      toast.success(`${user.email} is now ${newRole === 'admin' ? 'an Admin' : 'a User'}`)
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
+    } catch (err: any) {
+      toast.error(err.message)
+    }
+  }
+
   // ── Delete user ────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -165,15 +182,26 @@ export function UserManagement() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.email}</TableCell>
                     <TableCell>
-                      {user.role === 'admin' ? (
-                        <Badge variant="default" className="gap-1">
-                          <Shield className="h-3 w-3" /> Admin
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1">
-                          <User className="h-3 w-3" /> User
-                        </Badge>
-                      )}
+                      <Select
+                        value={user.role}
+                        onValueChange={(v: 'admin' | 'user') => handleRoleChange(user, v)}
+                      >
+                        <SelectTrigger className="w-28 h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">
+                            <span className="flex items-center gap-1.5">
+                              <User className="h-3 w-3" /> User
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="admin">
+                            <span className="flex items-center gap-1.5">
+                              <Shield className="h-3 w-3" /> Admin
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>{brandLabel(user.brand)}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">

@@ -89,7 +89,7 @@ export function SiteHeader({ role }: SiteHeaderProps) {
           )}
 
           <Button variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground">
-            <Link href={role === "admin" ? "/" : "/admin"}>
+            <Link href={role === "admin" ? "/brand-select" : "/admin"}>
               {role === "admin" ? (
                 <>
                   <User className="h-4 w-4" />

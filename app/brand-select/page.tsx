@@ -24,13 +24,8 @@ export default async function BrandSelectPage() {
     redirect('/login')
   }
 
-  // If the user is an admin, send them to admin dashboard
-  if (userData.role === 'admin') {
-    redirect('/admin')
-  }
-
-  // If the user already has a brand, they shouldn't be here – redirect to home
-  if (userData.brand) {
+  // Regular users who already have a brand don't need to re-select
+  if (userData.role !== 'admin' && userData.brand) {
     redirect('/')
   }
 
