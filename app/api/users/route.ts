@@ -160,7 +160,7 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json()
-  const { id, role, brand } = body
+  const { id, role, brand, password } = body
 
   if (!id) return NextResponse.json({ error: 'User id required' }, { status: 400 })
   if (role && !ALLOWED_ROLES.includes(role)) {
@@ -169,14 +169,28 @@ export async function PATCH(request: Request) {
   if (brand && !ALLOWED_BRANDS.includes(brand)) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
+  if (password) {
+    const passwordError = validatePassword(password)
+    if (passwordError) return NextResponse.json({ error: passwordError }, { status: 400 })
+  }
 
   const admin = adminClient()
-  const updates: Record<string, string> = {}
-  if (role)  updates.role  = role
-  if (brand) updates.brand = brand
 
-  const { error } = await admin.from('users').update(updates).eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // Update password via auth admin if provided
+  if (password) {
+    const { error: authError } = await admin.auth.admin.updateUserById(id, { password })
+    if (authError) return NextResponse.json({ error: authError.message }, { status: 500 })
+    if (!role && !brand) return NextResponse.json({ success: true })
+  }
+
+  const profileUpdates: Record<string, string> = {}
+  if (role)  profileUpdates.role  = role
+  if (brand) profileUpdates.brand = brand
+
+  if (Object.keys(profileUpdates).length > 0) {
+    const { error } = await admin.from('users').update(profileUpdates).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

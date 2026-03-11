@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Users, UserPlus, Trash2, RefreshCw, Shield, User } from "lucide-react"
+import { Users, UserPlus, Trash2, RefreshCw, Shield, User, KeyRound } from "lucide-react"
 import { toast } from "sonner"
 
 interface UserRecord {
@@ -40,9 +40,11 @@ interface UserRecord {
 export function UserManagement() {
   const [users, setUsers]               = useState<UserRecord[]>([])
   const [loading, setLoading]           = useState(true)
-  const [createOpen, setCreateOpen]     = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<UserRecord | null>(null)
-  const [submitting, setSubmitting]     = useState(false)
+  const [createOpen, setCreateOpen]         = useState(false)
+  const [deleteTarget, setDeleteTarget]     = useState<UserRecord | null>(null)
+  const [pwTarget, setPwTarget]             = useState<UserRecord | null>(null)
+  const [newPw, setNewPw]                   = useState('')
+  const [submitting, setSubmitting]         = useState(false)
 
   // ── Create form state ──────────────────────────────────────────────────────
   const [newEmail,    setNewEmail]    = useState('')
@@ -119,6 +121,28 @@ export function UserManagement() {
       toast.success(`User ${deleteTarget.email} deleted`)
       setDeleteTarget(null)
       fetchUsers()
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ── Change password ────────────────────────────────────────────────────────
+  const handlePasswordChange = async () => {
+    if (!pwTarget || !newPw) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: pwTarget.id, password: newPw }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to update password')
+      toast.success(`Password updated for ${pwTarget.email}`)
+      setPwTarget(null)
+      setNewPw('')
     } catch (err: any) {
       toast.error(err.message)
     } finally {
@@ -211,14 +235,24 @@ export function UserManagement() {
                       })}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteTarget(user)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={() => { setPwTarget(user); setNewPw('') }}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteTarget(user)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -309,6 +343,36 @@ export function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Change password dialog ── */}
+      <Dialog open={!!pwTarget} onOpenChange={open => { if (!open) { setPwTarget(null); setNewPw('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for <strong>{pwTarget?.email}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="new-password">New Password</Label>
+            <Input
+              id="new-password"
+              type="password"
+              placeholder="Min. 8 chars, upper, lower, number"
+              value={newPw}
+              onChange={e => setNewPw(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPwTarget(null); setNewPw('') }} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button onClick={handlePasswordChange} disabled={submitting || !newPw}>
+              {submitting ? 'Saving…' : 'Save Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
