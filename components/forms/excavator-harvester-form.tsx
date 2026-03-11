@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useRef, useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -10,372 +10,125 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChecklistRadioGroup } from "@/components/checklist-radio-group"
-import { excavatorHarvesterItems, type CheckStatus } from "@/lib/types"
+import { type CheckStatus } from "@/lib/types"
 import { AlertTriangle, CheckCircle2, Send, ArrowLeft, AlertCircle, Eraser } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { BrandLogo } from '@/components/brand-logo'
 import { NameSelector } from "@/components/name-selector"
 
-// ─── FULL SECTIONS ARRAY – ALL 34 SECTIONS, COMPLETE ─────────────
+// ============================================================================
+// INSPECTION SECTIONS – all 34 sections with sub-items
+// ============================================================================
 const sections = [
-  {
-    title: "License and Phepha",
-    items: ["Phepha valid.", "Displayed and visible."]
-  },
-  {
-    title: "Protective Structure",
-    items: [
-      "No cracks/damages.",
-      "No bolts missing/loose.",
-      "Guards not damaged and intact."
-    ]
-  },
-  {
-    title: "Exhaust",
-    items: ["Clamps secure.", "No excessive smoking/blowing."]
-  },
-  {
-    title: "Steps and Rails",
-    items: ["Steps in good condition.", "Not loose/broken."]
-  },
-  {
-    title: "Cab",
-    items: [
-      "Cab neat and tidy.",
-      "Door and mechanism working.",
-      "Door rubber in good condition.",
-      "Door handles functional."
-    ]
-  },
-  {
-    title: "Windscreen, Windows & Wipers",
-    items: [
-      "Clean/secure.",
-      "No cracks or damages to windscreen.",
-      "Window visibility not obscured by cracks.",
-      "Wipers are working."
-    ]
-  },
-  {
-    title: "Air Conditioner",
-    items: ["In working condition."]
-  },
-  {
-    title: "Seats",
-    items: [
-      "Condition of seat.",
-      "Seat secured.",
-      "Rotating lock functional.",
-      "Seat adjuster functional."
-    ]
-  },
-  {
-    title: "Safety Belt",
-    items: [
-      "Safety belts bolted/secured.",
-      "No damage/not extremely dirty/bleached or dyed.",
-      "Retractor clip in order and clicks into place."
-    ]
-  },
-  {
-    title: "Hooter and Reverse Alarm",
-    items: ["Hooter working and in good condition.", "Reverse alarm working."]
-  },
-  {
-    title: "Gauges",
-    items: ["In working order.", "Any warning symbols/lights."]
-  },
-  {
-    title: "Hydraulic Controls",
-    items: [
-      "Not loose/responsive.",
-      "No steering play.",
-      "Rear steering.",
-      "Pivot/steering ram pins not loose."
-    ]
-  },
-  {
-    title: "Hydraulic Head Cut Off (Bail Lever)",
-    items: [
-      "Operational (when it is disengaged, the hydraulics do not operate)."
-    ]
-  },
-  {
-    title: "Working Lights (LED)",
-    items: [
-      "In working order (if LED's, 2 thirds must be working) ie. (If 9 LED's, 6 must be working)."
-    ]
-  },
-  {
-    title: "Rotating Light",
-    items: ["Flashing/rotating beacon light in working condition."]
-  },
-  {
-    title: "Grill (Sieve)",
-    items: [
-      "Check condition – no damage.",
-      "Not clogged.",
-      "Air is moving freely."
-    ]
-  },
-  {
-    title: "Battery",
-    items: [
-      "Secure.",
-      "Sufficient water.",
-      "Terminals clean/tight & covers on.",
-      "No exposed wiring."
-    ]
-  },
-  {
-    title: "Radiator",
-    items: ["Secure.", "Water level correct.", "No signs of leaking."]
-  },
-  {
-    title: "Air Pre-Cleaner",
-    items: [
-      "Good condition – no damage/no sucking of air.",
-      "Clean and secure.",
-      "No dust in pre-cleaner bowl."
-    ]
-  },
-  {
-    title: "Fan Belt",
-    items: ["No squeaking.", "No signs of damage."]
-  },
-  {
-    title: "Fuel & Oil levels",
-    items: [
-      "Fuel and oil levels correct.",
-      "Fuel cap and hydraulic filler cap secure.",
-      "All dipsticks secure."
-    ]
-  },
-  {
-    title: "Fuel & Oil Leaks",
-    items: [
-      "Fuel and oil pipes secure.",
-      "No worn or damaged pipes.",
-      "No visible fuel and oil leaks."
-    ]
-  },
-  {
-    title: "Wiring",
-    items: ["No loose, damaged or exposed wires.", "No loose broken plugs."]
-  },
-  {
-    title: "Grease",
-    items: ["Adequately greased chassis.", "No missing or damaged grease nipples."]
-  },
-  {
-    title: "Boom Structure",
-    items: [
-      "Not bent/cracked.",
-      "Pins all secured.",
-      "No loose/missing bolts."
-    ]
-  },
-  {
-    title: "Hydraulic Cylinders",
-    items: [
-      "Good condition – no damage.",
-      "No loose fittings.",
-      "No oil leaks.",
-      "No missing bolts/nuts."
-    ]
-  },
-  {
-    title: "Hydraulic Hoses and Fittings",
-    items: [
-      "No excessive rubbing.",
-      "No loose brackets/bolts/nuts.",
-      "Smooth operation.",
-      "Jaws not cracked or broken."
-    ]
-  },
-  {
-    title: "Harvester Head",
-    items: [
-      "No pipes leaking/rubbing.",
-      "No loose brackets/bolts/nuts.",
-      "Roller condition good/smooth operation.",
-      "Knives secure/good condition.",
-      "Grease hangar link and attachment adequately greased."
-    ]
-  },
-  {
-    title: "Cutting Bar & Chain",
-    items: [
-      "Saw box in good condition.",
-      "No wear / adequately lubricated.",
-      "Correctly tensioned."
-    ]
-  },
-  {
-    title: "Tracks & Sprockets",
-    items: [
-      "Tracks are aligned.",
-      "Not damaged or worn.",
-      "No cracks.",
-      "No bolts/pins loose or missing."
-    ]
-  },
-  {
-    title: "All Excess Loose Debris Removed Pre-Shift",
-    items: [
-      "Battery area/exhaust area.",
-      "Behind the boom/hydraulic cooler.",
-      "Engine bay."
-    ]
-  },
-  {
-    title: "Escape Hatch & Hammer",
-    items: ["Test the escape hatch opening.", "Escape hammer is easily accessible."]
-  },
-  {
-    title: "Communication",
-    items: [
-      "Radio or cell phone in working condition.",
-      "Handheld panic alarm functional."
-    ]
-  },
-  {
-    title: "Fire Systems",
-    items: [
-      "Gauge light working/no warning lights.",
-      "No damaged hoses.",
-      "Secured/service/seal in place.",
-      "Gauges in order."
-    ]
-  }
+  { title: "License and Phepha", items: ["Phepha valid.", "Displayed and visible."] },
+  { title: "Protective Structure", items: ["No cracks/damages.", "No bolts missing/loose.", "Guards not damaged and intact."] },
+  { title: "Exhaust", items: ["Clamps secure.", "No excessive smoking/blowing."] },
+  { title: "Steps and Rails", items: ["Steps in good condition.", "Not loose/broken."] },
+  { title: "Cab", items: ["Cab neat and tidy.", "Door and mechanism working.", "Door rubber in good condition.", "Door handles functional."] },
+  { title: "Windscreen, Windows & Wipers", items: ["Clean/secure.", "No cracks or damages to windscreen.", "Window visibility not obscured by cracks.", "Wipers are working."] },
+  { title: "Air Conditioner", items: ["In working condition."] },
+  { title: "Seats", items: ["Condition of seat.", "Seat secured.", "Rotating lock functional.", "Seat adjuster functional."] },
+  { title: "Safety Belt", items: ["Safety belts bolted/secured.", "No damage/not extremely dirty/bleached or dyed.", "Retractor clip in order and clicks into place."] },
+  { title: "Hooter and Reverse Alarm", items: ["Hooter working and in good condition.", "Reverse alarm working."] },
+  { title: "Gauges", items: ["In working order.", "Any warning symbols/lights."] },
+  { title: "Hydraulic Controls", items: ["Not loose/responsive.", "No steering play.", "Rear steering.", "Pivot/steering ram pins not loose."] },
+  { title: "Hydraulic Head Cut Off (Bail Lever)", items: ["Operational (when it is disengaged, the hydraulics do not operate)."] },
+  { title: "Working Lights (LED)", items: ["In working order (if LED's, 2 thirds must be working) ie. (If 9 LED's, 6 must be working)."] },
+  { title: "Rotating Light", items: ["Flashing/rotating beacon light in working condition."] },
+  { title: "Grill (Sieve)", items: ["Check condition – no damage.", "Not clogged.", "Air is moving freely."] },
+  { title: "Battery", items: ["Secure.", "Sufficient water.", "Terminals clean/tight & covers on.", "No exposed wiring."] },
+  { title: "Radiator", items: ["Secure.", "Water level correct.", "No signs of leaking."] },
+  { title: "Air Pre-Cleaner", items: ["Good condition – no damage/no sucking of air.", "Clean and secure.", "No dust in pre-cleaner bowl."] },
+  { title: "Fan Belt", items: ["No squeaking.", "No signs of damage."] },
+  { title: "Fuel & Oil levels", items: ["Fuel and oil levels correct.", "Fuel cap and hydraulic filler cap secure.", "All dipsticks secure."] },
+  { title: "Fuel & Oil Leaks", items: ["Fuel and oil pipes secure.", "No worn or damaged pipes.", "No visible fuel and oil leaks."] },
+  { title: "Wiring", items: ["No loose, damaged or exposed wires.", "No loose broken plugs."] },
+  { title: "Grease", items: ["Adequately greased chassis.", "No missing or damaged grease nipples."] },
+  { title: "Boom Structure", items: ["Not bent/cracked.", "Pins all secured.", "No loose/missing bolts."] },
+  { title: "Hydraulic Cylinders", items: ["Good condition – no damage.", "No loose fittings.", "No oil leaks.", "No missing bolts/nuts."] },
+  { title: "Hydraulic Hoses and Fittings", items: ["No excessive rubbing.", "No loose brackets/bolts/nuts.", "Smooth operation.", "Jaws not cracked or broken."] },
+  { title: "Harvester Head", items: ["No pipes leaking/rubbing.", "No loose brackets/bolts/nuts.", "Roller condition good/smooth operation.", "Knives secure/good condition.", "Grease hangar link and attachment adequately greased."] },
+  { title: "Cutting Bar & Chain", items: ["Saw box in good condition.", "No wear / adequately lubricated.", "Correctly tensioned."] },
+  { title: "Tracks & Sprockets", items: ["Tracks are aligned.", "Not damaged or worn.", "No cracks.", "No bolts/pins loose or missing."] },
+  { title: "All Excess Loose Debris Removed Pre-Shift", items: ["Battery area/exhaust area.", "Behind the boom/hydraulic cooler.", "Engine bay."] },
+  { title: "Escape Hatch & Hammer", items: ["Test the escape hatch opening.", "Escape hammer is easily accessible."] },
+  { title: "Communication", items: ["Radio or cell phone in working condition.", "Handheld panic alarm functional."] },
+  { title: "Fire Systems", items: ["Gauge light working/no warning lights.", "No damaged hoses.", "Secured/service/seal in place.", "Gauges in order."] },
 ]
 
 const allItems = sections.flatMap((section) => section.items)
 
-// ─── Helper: renders a grouped section with icon in the MIDDLE and visible row borders
-const renderGroupedSection = (
-  title: string,
-  items: string[],
-  iconSrc: string,
-  itemState: Record<string, CheckStatus>,
-  onItemChange: (label: string, value: CheckStatus) => void
-) => {
-  const splitIndex = Math.floor(items.length / 2)
-  const firstHalf = items.slice(0, splitIndex)
-  const secondHalf = items.slice(splitIndex)
+// ============================================================================
+// PER-SECTION IMAGE MAPPING
+// ============================================================================
+const sectionImages: Record<string, string> = {
+  "License and Phepha":                          "/images/license2.png",
+  "Protective Structure":                         "/images/protective-structure.png",
+  "Exhaust":                                      "/images/exhaust.png",
+  "Steps and Rails":                              "/images/steps-and-rails.png",
+  "Cab":                                          "/images/cabs.png",
+  "Windscreen, Windows & Wipers":                 "/images/wipes.png",
+  "Air Conditioner":                              "/images/air-conditioner.png",
+  "Seats":                                        "/images/seats.png",
+  "Safety Belt":                                  "/images/safety-belt.png",
+  "Hooter and Reverse Alarm":                     "/images/hooters.png",
+  "Gauges":                                       "/images/gauges.png",
+  "Hydraulic Controls":                           "/images/hydraulic-controls.png",
+  "Hydraulic Head Cut Off (Bail Lever)":          "/images/bail-lever.png",
+  "Working Lights (LED)":                         "/images/led.png",
+  "Rotating Light":                               "/images/rotating-light.png",
+  "Grill (Sieve)":                                "/images/grill.png",
+  "Battery":                                      "/images/battery.png",
+  "Radiator":                                     "/images/radiator.png",
+  "Air Pre-Cleaner":                              "/images/air-pre-cleaner.png",
+  "Fan Belt":                                     "/images/fan-belt.png",
+  "Fuel & Oil levels":                            "/images/fuel-oil-levels.png",
+  "Fuel & Oil Leaks":                             "/images/fuel-leaks.png",
+  "Wiring":                                       "/images/wiring.png",
+  "Grease":                                       "/images/grease.png",
+  "Boom Structure":                               "/images/boom-structure.png",
+  "Hydraulic Cylinders":                          "/images/hydraulic-cylinders.png",
+  "Hydraulic Hoses and Fittings":                 "/images/hydraulic-hoses.png",
+  "Harvester Head":                               "/images/harvester-head.png",
+  "Cutting Bar & Chain":                          "/images/cutting-bar.png",
+  "Tracks & Sprockets":                           "/images/tracks-sprockets.png",
+  "All Excess Loose Debris Removed Pre-Shift":    "/images/all-excess-loose-debris.png",
+  "Escape Hatch & Hammer":                        "/images/escape-hatch.png",
+  "Communication":                                "/images/communication.png",
+  "Fire Systems":                                 "/images/fire-system.png",
+}
 
+// ============================================================================
+// ITEM ROW COMPONENT
+// ============================================================================
+interface ItemRowProps {
+  item: string
+  value: CheckStatus
+  onChange: (value: CheckStatus) => void
+  iconSrc: string
+}
+
+function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
+  const isSelected = (status: CheckStatus) => value === status
   return (
-    <div key={title} className="space-y-2">
-      <h4 className="text-sm font-semibold text-primary">{title}</h4>
-      <div className="ml-4 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
-        {/* First half of items – each with bottom border */}
-        {firstHalf.map((item) => (
-          <div key={item} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
-            <span className="text-sm text-foreground">{item}</span>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant={itemState[item] === "ok" ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  onItemChange(item, itemState[item] === "ok" ? null : "ok")
-                }
-                className={`w-16 ${
-                  itemState[item] === "ok" ? "bg-green-600 hover:bg-green-700" : ""
-                }`}
-              >
-                OK
-              </Button>
-              <Button
-                type="button"
-                variant={itemState[item] === "def" ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  onItemChange(item, itemState[item] === "def" ? null : "def")
-                }
-                className={`w-16 ${
-                  itemState[item] === "def" ? "bg-red-600 hover:bg-red-700" : ""
-                }`}
-              >
-                DEF
-              </Button>
-              <Button
-                type="button"
-                variant={itemState[item] === "na" ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  onItemChange(item, itemState[item] === "na" ? null : "na")
-                }
-                className={`w-16 ${
-                  itemState[item] === "na" ? "bg-gray-600 hover:bg-gray-700" : ""
-                }`}
-              >
-                N/A
-              </Button>
-            </div>
-          </div>
-        ))}
-
-        {/* Icon row – highlighted background */}
-        <div className="flex justify-center py-4 bg-gray-100 rounded-md">
-          <Image
-            src={iconSrc}
-            alt={`${title} icon`}
-            width={200}
-            height={200}
-            className="object-contain"
-          />
-        </div>
-
-        {/* Second half of items – each with bottom border */}
-        {secondHalf.map((item) => (
-          <div key={item} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
-            <span className="text-sm text-foreground">{item}</span>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant={itemState[item] === "ok" ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  onItemChange(item, itemState[item] === "ok" ? null : "ok")
-                }
-                className={`w-16 ${
-                  itemState[item] === "ok" ? "bg-green-600 hover:bg-green-700" : ""
-                }`}
-              >
-                OK
-              </Button>
-              <Button
-                type="button"
-                variant={itemState[item] === "def" ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  onItemChange(item, itemState[item] === "def" ? null : "def")
-                }
-                className={`w-16 ${
-                  itemState[item] === "def" ? "bg-red-600 hover:bg-red-700" : ""
-                }`}
-              >
-                DEF
-              </Button>
-              <Button
-                type="button"
-                variant={itemState[item] === "na" ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  onItemChange(item, itemState[item] === "na" ? null : "na")
-                }
-                className={`w-16 ${
-                  itemState[item] === "na" ? "bg-gray-600 hover:bg-gray-700" : ""
-                }`}
-              >
-                N/A
-              </Button>
-            </div>
-          </div>
-        ))}
+    <div className="grid grid-cols-[1fr_auto_auto] items-center border-b border-gray-200 last:border-0">
+      <div className="py-3 pr-4 border-r border-gray-200">
+        <span className="text-sm font-medium text-foreground">{item}</span>
+      </div>
+      <div className="py-3 px-4 border-r border-gray-200 bg-gray-50 flex justify-center w-[150px]">
+        <Image src={iconSrc} alt={item} width={150} height={150} className="object-contain" />
+      </div>
+      <div className="py-3 pl-4 flex items-center gap-2">
+        <Button type="button" variant={isSelected("ok") ? "default" : "outline"} size="sm"
+          onClick={() => onChange(isSelected("ok") ? null : "ok")}
+          className={`w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}>OK</Button>
+        <Button type="button" variant={isSelected("def") ? "default" : "outline"} size="sm"
+          onClick={() => onChange(isSelected("def") ? null : "def")}
+          className={`w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}>DEF</Button>
+        <Button type="button" variant={isSelected("na") ? "default" : "outline"} size="sm"
+          onClick={() => onChange(isSelected("na") ? null : "na")}
+          className={`w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}>N/A</Button>
       </div>
     </div>
   )
@@ -388,11 +141,13 @@ interface ExcavatorHarvesterFormProps {
   brand: 'ringomode' | 'cintasign'
 }
 
+// ============================================================================
+// MAIN FORM COMPONENT
+// ============================================================================
 export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // ---------- Operator Information ----------
   const [formData, setFormData] = useState({
     operatorName: "",
     shift: "",
@@ -400,7 +155,7 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
     hourMeterStart: "",
     hourMeterStop: "",
     validTrainingCard: "",
-    unitNumber: ""
+    unitNumber: "",
   })
 
   // State for the next document number fetched from server
@@ -432,15 +187,11 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
     return `${yymmdd}-${num}`
   }, [nextNumber])
 
-  // ---------- Inspection Items State ----------
   const [items, setItems] = useState<Record<string, CheckStatus>>(
     Object.fromEntries(allItems.map((item) => [item, null]))
   )
-
-  // ---------- Defect Details ----------
   const [defectDetails, setDefectDetails] = useState("")
 
-  // ---------- Signature Pad ----------
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [signatureImage, setSignatureImage] = useState<string | null>(null)
@@ -450,149 +201,55 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
-
-    const width = 400
-    const height = 120
-    canvas.width = width
-    canvas.height = height
-
-    ctx.lineWidth = 2
-    ctx.lineCap = "round"
-    ctx.lineJoin = "round"
-    ctx.strokeStyle = "#000000"
-
-    ctx.fillStyle = "#ffffff"
-    ctx.fillRect(0, 0, width, height)
-
-    ctx.strokeStyle = "#cccccc"
-    ctx.lineWidth = 1
-    ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
+    const width = 400, height = 120
+    canvas.width = width; canvas.height = height
+    ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#000000"
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, width, height)
+    ctx.strokeStyle = "#cccccc"; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, width - 1, height - 1)
   }, [])
 
-  const getCanvasCoordinates = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
-
     const rect = canvas.getBoundingClientRect()
     const scaleX = canvas.width / rect.width
     const scaleY = canvas.height / rect.height
-
     if ("touches" in e) {
       const touch = e.touches[0]
-      return {
-        x: (touch.clientX - rect.left) * scaleX,
-        y: (touch.clientY - rect.top) * scaleY
-      }
+      return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY }
     } else {
-      return {
-        x: e.nativeEvent.offsetX * scaleX,
-        y: e.nativeEvent.offsetY * scaleY
-      }
+      return { x: e.nativeEvent.offsetX * scaleX, y: e.nativeEvent.offsetY * scaleY }
     }
   }
 
-  const startDrawing = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    e.preventDefault()
-    setIsDrawing(true)
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    ctx.beginPath()
-    const { x, y } = getCanvasCoordinates(e)
-    ctx.moveTo(x, y)
-  }
-
-  const draw = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    e.preventDefault()
-    if (!isDrawing) return
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const { x, y } = getCanvasCoordinates(e)
-    ctx.lineTo(x, y)
-    ctx.stroke()
-  }
-
-  const stopDrawing = () => {
-    setIsDrawing(false)
-    const canvas = canvasRef.current
-    if (canvas) {
-      setSignatureImage(canvas.toDataURL("image/png"))
-    }
-  }
-
+  const startDrawing = (e: any) => { e.preventDefault(); setIsDrawing(true); const ctx = canvasRef.current?.getContext("2d"); if (!ctx) return; ctx.beginPath(); const { x, y } = getCanvasCoordinates(e); ctx.moveTo(x, y) }
+  const draw = (e: any) => { e.preventDefault(); if (!isDrawing) return; const ctx = canvasRef.current?.getContext("2d"); if (!ctx) return; const { x, y } = getCanvasCoordinates(e); ctx.lineTo(x, y); ctx.stroke() }
+  const stopDrawing = () => { setIsDrawing(false); if (canvasRef.current) setSignatureImage(canvasRef.current.toDataURL("image/png")) }
   const clearSignature = () => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
-
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = "#ffffff"
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = "#cccccc"
-    ctx.lineWidth = 1
-    ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1)
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.strokeStyle = "#cccccc"; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1)
     setSignatureImage(null)
   }
 
-  // ---------- Computed Values ----------
-  const hasDefects = useMemo(
-    () => Object.values(items).some((s) => s === "def"),
-    [items]
-  )
-  const allItemsChecked = useMemo(
-    () => Object.values(items).every((s) => s !== null),
-    [items]
-  )
-  const checkedCount = useMemo(
-    () => Object.values(items).filter((s) => s !== null).length,
-    [items]
-  )
-
-  const handleItemChange = (label: string, value: CheckStatus) => {
-    setItems((prev) => ({ ...prev, [label]: value }))
-  }
+  const hasDefects = useMemo(() => Object.values(items).some((s) => s === "def"), [items])
+  const allItemsChecked = useMemo(() => Object.values(items).every((s) => s !== null), [items])
+  const checkedCount = useMemo(() => Object.values(items).filter((s) => s !== null).length, [items])
+  const handleItemChange = (label: string, value: CheckStatus) => setItems((prev) => ({ ...prev, [label]: value }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.operatorName || !formData.unitNumber) {
-      toast.error("Please fill in all required fields")
-      return
-    }
-
-    if (!allItemsChecked) {
-      toast.error("Please check all inspection items")
-      return
-    }
-
-    if (hasDefects && !defectDetails.trim()) {
-      toast.error("Please provide details for the defects")
-      return
-    }
-
-    if (!signatureImage) {
-      toast.error("Please provide your signature")
-      return
-    }
-
+    if (!formData.operatorName || !formData.unitNumber) { toast.error("Please fill in all required fields"); return }
+    if (!allItemsChecked) { toast.error("Please check all inspection items"); return }
+    if (!signatureImage) { toast.error("Please provide your signature"); return }
     setIsSubmitting(true)
-
     try {
       const response = await fetch("/api/submissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           formType: "excavator-harvester",
@@ -600,112 +257,68 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
           submittedBy: formData.operatorName,
           hasDefects,
           brand: brand,
-          data: {
-            ...formData,
-            items,
-            hasDefects,
-            defectDetails,
-            signature: signatureImage
-          } // documentNo NOT included
+          data: { ...formData, items, hasDefects, defectDetails, signature: signatureImage } // documentNo NOT included
         })
       })
-
       if (response.ok) {
-        // Fire‑and‑forget webhook call to Make
-        const webhookUrl = process.env.MAKE_WEBHOOK_URL
-        if (webhookUrl) {
-          fetch(webhookUrl, {
+        // --- Webhook call (fire-and-forget) ---
+        const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
+        if (makeWebhookUrl) {
+          const formBody = new URLSearchParams()
+          formBody.append('data', JSON.stringify({
+            formTitle: "Excavator Harvester Pre-Shift Inspection Checklist",
+            documentNo,
+            brand,
+            submittedBy: formData.operatorName,
+            submittedAt: new Date().toISOString(),
+            hasDefects,
+            defectDetails,
+            inspectionData: items,
+          }))
+          fetch(makeWebhookUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              formTitle: "Excavator Harvester Pre-Shift Inspection Checklist",
-              documentNo,
-              brand,
-              submittedBy: formData.operatorName,
-              submittedAt: new Date().toISOString(),
-              hasDefects,
-              defectDetails,
-              inspectionData: items, // object mapping each item to its status
-            }),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formBody,
           }).catch(err => console.error('Webhook error:', err))
         }
         toast.success("Checklist submitted successfully!")
         router.push("/")
-      } else {
-        toast.error("Failed to submit checklist")
-      }
-    } catch {
-      toast.error("An error occurred. Please try again.")
-    } finally {
-      setIsSubmitting(false)
-    }
+      } else toast.error("Failed to submit checklist")
+    } catch { toast.error("An error occurred. Please try again.") } finally { setIsSubmitting(false) }
   }
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 p-4 pb-12 lg:p-8 lg:pb-16">
-      {/* Back Button */}
       <div className="flex items-center gap-3">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          asChild
-          className="gap-2 text-muted-foreground"
-        >
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
+        <Button type="button" variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground">
+          <Link href="/"><ArrowLeft className="h-4 w-4" /> Back</Link>
         </Button>
       </div>
 
-      {/* HEADER */}
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
             <BrandLogo brand={brand} width={160} height={50} />
           </div>
-          <div className="mb-1 text-xs font-medium text-muted-foreground">
-            HSE Management System
-          </div>
-          <CardTitle className="text-xl text-foreground">
-            Excavator Harvester Pre-Shift Inspection Checklist
-          </CardTitle>
-          <CardDescription>
-            Document Ref: HSEMS/8.1.19/REG/001 | Rev. 5 | 27.03.2020
-          </CardDescription>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
+          <CardTitle className="text-xl text-foreground">Excavator Harvester Pre-Shift Inspection Checklist</CardTitle>
+          <CardDescription>Document Ref: HSEMS/8.1.19/REG/001 | Rev. 5 | 27.03.2020</CardDescription>
         </CardHeader>
       </Card>
 
-      {/* GENERAL INSTRUCTIONS */}
       <Card className="border-amber-200 bg-amber-50">
         <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-600" />
-            <CardTitle className="text-sm font-semibold text-amber-800">
-              General Instructions for Checklist:
-            </CardTitle>
-          </div>
+          <div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" /><CardTitle className="text-sm font-semibold text-amber-800">General Instructions for Checklist:</CardTitle></div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-amber-700">
-            The operator is to conduct a 10 minute physical walkabout of the machinery on a daily basis
-            and assess the condition of the attachment.
-          </p>
-          <p className="mt-2 text-sm text-amber-700">
-            Outcome to be detailed with an &quot;Ok&quot; if in order and a &quot;Def&quot; if defective. Defective outcomes
-            to be documented below.
-          </p>
+          <p className="text-sm text-amber-700">The operator is to conduct a 10 minute physical walkabout of the machinery on a daily basis and assess the condition of the attachment.</p>
+          <p className="mt-2 text-sm text-amber-700">Outcome to be detailed with an &quot;Ok&quot; if in order and a &quot;Def&quot; if defective. Defective outcomes to be documented below.</p>
         </CardContent>
       </Card>
 
-      {/* OPERATOR INFORMATION */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base text-foreground">Operator Information</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base text-foreground">Operator Information</CardTitle></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          {/* Operator name dropdown */}
           <NameSelector
             brand={brand}
             value={formData.operatorName}
@@ -715,26 +328,15 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
             placeholder="Select operator name"
           />
 
-          {/* Document number field – read‑only, now shows actual next number */}
           <div className="space-y-2">
-            <Label htmlFor="documentNo" className="text-foreground">Document No.</Label>
-            <Input
-              id="documentNo"
-              value={documentNo}
-              readOnly
-              className="bg-muted"
-            />
+            <Label htmlFor="documentNo">Document No.</Label>
+            <Input id="documentNo" value={documentNo} readOnly className="bg-muted" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shift" className="text-foreground">Shift</Label>
-            <Select
-              value={formData.shift}
-              onValueChange={(val) => setFormData((p) => ({ ...p, shift: val }))}
-            >
-              <SelectTrigger id="shift">
-                <SelectValue placeholder="Select shift" />
-              </SelectTrigger>
+            <Label htmlFor="shift">Shift</Label>
+            <Select value={formData.shift} onValueChange={(val) => setFormData((p) => ({ ...p, shift: val }))}>
+              <SelectTrigger id="shift"><SelectValue placeholder="Select shift" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="day">Day Shift</SelectItem>
                 <SelectItem value="night">Night Shift</SelectItem>
@@ -743,65 +345,32 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date" className="text-foreground">Date</Label>
-            <Input
-              id="date"
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData((p) => ({ ...p, date: e.target.value }))}
-            />
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hourMeterStart" className="text-foreground">Hour Meter Start</Label>
-            <Input
-              id="hourMeterStart"
-              type="number"
-              value={formData.hourMeterStart}
-              onChange={(e) => setFormData((p) => ({ ...p, hourMeterStart: e.target.value }))}
-              placeholder="e.g. 1250"
-            />
+            <Label htmlFor="hourMeterStart">Hour Meter Start</Label>
+            <Input id="hourMeterStart" type="number" value={formData.hourMeterStart} onChange={e => setFormData(p => ({ ...p, hourMeterStart: e.target.value }))} placeholder="e.g. 1250" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hourMeterStop" className="text-foreground">Hour Meter Stop</Label>
-            <Input
-              id="hourMeterStop"
-              type="number"
-              value={formData.hourMeterStop}
-              onChange={(e) => setFormData((p) => ({ ...p, hourMeterStop: e.target.value }))}
-              placeholder="e.g. 1262"
-            />
+            <Label htmlFor="hourMeterStop">Hour Meter Stop</Label>
+            <Input id="hourMeterStop" type="number" value={formData.hourMeterStop} onChange={e => setFormData(p => ({ ...p, hourMeterStop: e.target.value }))} placeholder="e.g. 1262" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="validTrainingCard" className="text-foreground">
-              Valid Training Card (Exp. Date)
-            </Label>
-            <Input
-              id="validTrainingCard"
-              type="date"
-              value={formData.validTrainingCard}
-              onChange={(e) => setFormData((p) => ({ ...p, validTrainingCard: e.target.value }))}
-            />
+            <Label htmlFor="validTrainingCard">Valid Training Card (Exp. Date)</Label>
+            <Input id="validTrainingCard" type="date" value={formData.validTrainingCard} onChange={e => setFormData(p => ({ ...p, validTrainingCard: e.target.value }))} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="unitNumber" className="text-foreground">
-              Unit Number <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="unitNumber"
-              value={formData.unitNumber}
-              onChange={(e) => setFormData((p) => ({ ...p, unitNumber: e.target.value }))}
-              placeholder="e.g. EXC-H-001"
-              required
-            />
+            <Label htmlFor="unitNumber">Unit Number <span className="text-destructive">*</span></Label>
+            <Input id="unitNumber" value={formData.unitNumber} onChange={e => setFormData(p => ({ ...p, unitNumber: e.target.value }))} placeholder="e.g. EXC-H-001" required />
           </div>
         </CardContent>
       </Card>
 
-      {/* QUICK REFERENCE */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-6">
           <h3 className="mb-2 text-sm font-semibold text-foreground">Quick Reference:</h3>
@@ -813,436 +382,66 @@ export function ExcavatorHarvesterForm({ brand }: ExcavatorHarvesterFormProps) {
         </CardContent>
       </Card>
 
-      {/* PROGRESS */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">
-          Progress: {checkedCount} / {allItems.length} items checked
-        </span>
-        {allItemsChecked && (
-          <span className="flex items-center gap-1 text-[hsl(142,76%,36%)]">
-            <CheckCircle2 className="h-4 w-4" />
-            All items checked
-          </span>
-        )}
+        <span className="text-muted-foreground">Progress: {checkedCount} / {allItems.length} items checked</span>
+        {allItemsChecked && <span className="flex items-center gap-1 text-green-600"><CheckCircle2 className="h-4 w-4" /> All items checked</span>}
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary transition-all"
-          style={{ width: `${(checkedCount / allItems.length) * 100}%` }}
-        />
-      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(checkedCount / allItems.length) * 100}%` }} /></div>
 
-      {/* INSPECTION ITEMS – ALL 34 SECTIONS GROUPED WITH VISIBLE ROW BORDERS */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base text-foreground">Inspection Items</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base text-foreground">Inspection Items</CardTitle></CardHeader>
         <CardContent className="space-y-6">
-          {sections.map((section, sectionIdx) => {
-            if (section.title === "License and Phepha") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/license2.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Protective Structure") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/protective-structure.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Exhaust") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/exhaust.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Steps and Rails") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/steps-and-rails.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Cab") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/cabs.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Windscreen, Windows & Wipers") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/wipes.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Air Conditioner") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/air-conditioner.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Seats") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/seats.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Safety Belt") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/safety-belt.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Hooter and Reverse Alarm") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/hooters.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Gauges") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/gauges.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Hydraulic Controls") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/hydraulic-controls.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Air Pre-Cleaner") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/air-pre-cleaner.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Battery") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/battery.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Hydraulic Head Cut Off (Bail Lever)") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/bail-lever.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Fan Belt") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/fan-belt.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Fuel & Oil levels") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/fuel-oil-levels.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Fuel & Oil Leaks") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/fuel-leaks.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Wiring") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/wiring.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Grease") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/grease.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Grill (Sieve)") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/grill.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Working Lights (LED)") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/led.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Radiator") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/radiator.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Rotating Light") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/rotating-light.png",
-                items,
-                handleItemChange
-              )
-            }
-
-            if (section.title === "Boom Structure") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/boom-structure.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Hydraulic Cylinders") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/hydraulic-cylinders.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Hydraulic Hoses and Fittings") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/hydraulic-hoses.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Harvester Head") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/harvester-head.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Cutting Bar & Chain") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/cutting-bar.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Tracks & Sprockets") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/tracks-sprockets.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "All Excess Loose Debris Removed Pre-Shift") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/all-excess-loose-debris.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Escape Hatch & Hammer") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/escape-hatch.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Communication") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/communication.png",
-                items,
-                handleItemChange
-              )
-            }
-            if (section.title === "Fire Systems") {
-              return renderGroupedSection(
-                section.title,
-                section.items,
-                "/images/fire-system.png",
-                items,
-                handleItemChange
-              )
-            }
-
-            // Fallback (should not happen)
-            return (
-              <div key={sectionIdx} className="space-y-2">
-                <h4 className="text-sm font-semibold text-primary">{section.title}</h4>
-                <div className="ml-4 space-y-2">
-                  {section.items.map((item, itemIdx) => (
-                    <ChecklistRadioGroup
-                      key={`${sectionIdx}-${itemIdx}`}
-                      label={item}
-                      value={items[item]}
-                      onChange={(val: CheckStatus) => handleItemChange(item, val)}
-                      index={itemIdx}
-                    />
-                  ))}
-                </div>
+          {sections.map((section, sectionIdx) => (
+            <div key={sectionIdx}>
+              <h4 className="text-sm font-semibold text-primary mb-2">{section.title}</h4>
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                {section.items.map((item) => (
+                  <ItemRow
+                    key={item}
+                    item={item}
+                    value={items[item]}
+                    onChange={(val) => handleItemChange(item, val)}
+                    iconSrc={sectionImages[section.title] ?? "/images/license2.png"}
+                  />
+                ))}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </CardContent>
       </Card>
 
-      {/* DEFECTS SECTION */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            Are There Any Defects Selected
-          </CardTitle>
-          <CardDescription>
-            If &quot;Def&quot; is selected, please specify defects here.
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-5 w-5 text-amber-600" /> Are There Any Defects Selected</CardTitle>
+          <CardDescription>If &quot;Def&quot; is selected, please specify defects here.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Textarea
-            value={defectDetails}
-            onChange={(e) => setDefectDetails(e.target.value)}
-            placeholder="Details of defect ..."
-            rows={4}
-            className="resize-none"
-          />
-        </CardContent>
+        <CardContent><Textarea value={defectDetails} onChange={e => setDefectDetails(e.target.value)} placeholder="Details of defect ..." rows={4} className="resize-none" /></CardContent>
       </Card>
 
-      {/* SIGNATURE PAD */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base text-foreground">Signature</CardTitle>
-          <CardDescription>
-            Draw your signature using your mouse or touchpad
-          </CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base text-foreground">Signature</CardTitle><CardDescription>Draw your signature using your mouse or touchpad</CardDescription></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col items-center">
-            <canvas
-              ref={canvasRef}
-              className="w-full max-w-[400px] h-[120px] border rounded-md touch-none cursor-crosshair"
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onTouchStart={startDrawing}
-              onTouchMove={draw}
-              onTouchEnd={stopDrawing}
-              onTouchCancel={stopDrawing}
-            />
-            <div className="flex gap-2 mt-3 self-start">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={clearSignature}
-                className="gap-2"
-              >
-                <Eraser className="h-4 w-4" />
-                Clear
-              </Button>
-            </div>
+            <canvas ref={canvasRef} className="w-full max-w-[400px] h-[120px] border rounded-md touch-none cursor-crosshair"
+              onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
+              onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} onTouchCancel={stopDrawing} />
+            <div className="flex gap-2 mt-3 self-start"><Button type="button" variant="outline" size="sm" onClick={clearSignature} className="gap-2"><Eraser className="h-4 w-4" /> Clear</Button></div>
           </div>
         </CardContent>
       </Card>
 
       <Separator />
 
-      {/* SUBMIT BUTTONS */}
+      <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground border-t pt-4">
+        <div><span className="font-semibold">Document Reference No.</span><br />HSEMS / 8.1.19 / REG / 001</div>
+        <div><span className="font-semibold">Author</span><br />HSE Manager</div>
+        <div><span className="font-semibold">Revision</span><br />5</div>
+        <div><span className="font-semibold">Creation Date</span><br />27.03.2020</div>
+      </div>
+
       <div className="flex items-center justify-end gap-4">
-        <Button type="button" variant="outline" asChild>
-          <Link href="/">Cancel</Link>
-        </Button>
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          <Send className="h-4 w-4" />
-          {isSubmitting ? "Submitting..." : "Submit Checklist"}
-        </Button>
+        <Button type="button" variant="outline" asChild><Link href="/">Cancel</Link></Button>
+        <Button type="submit" disabled={isSubmitting} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"><Send className="h-4 w-4" />{isSubmitting ? "Submitting..." : "Submit Checklist"}</Button>
       </div>
     </form>
   )
