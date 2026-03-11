@@ -1200,9 +1200,9 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="text-foreground">Submitted By</TableHead>
-                        <TableHead className="text-foreground">Form Type</TableHead>
-                        <TableHead className="text-foreground">Brand</TableHead>
-                        <TableHead className="text-foreground">Date</TableHead>
+                        <TableHead className="hidden sm:table-cell text-foreground">Form Type</TableHead>
+                        <TableHead className="hidden md:table-cell text-foreground">Brand</TableHead>
+                        <TableHead className="hidden md:table-cell text-foreground">Date</TableHead>
                         <TableHead className="text-foreground">Status</TableHead>
                         <TableHead className="text-right text-foreground">Actions</TableHead>
                       </TableRow>
@@ -1219,7 +1219,7 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                               {sub.submittedBy}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             <div className="flex items-center gap-2">
                               {getFormIcon(sub.formType)}
                               <span className="text-foreground">
@@ -1227,10 +1227,10 @@ export function AdminDashboard({ initialSubmissions = [] }: AdminDashboardProps)
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <BrandBadge brand={sub.brand} />
                           </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          <TableCell className="hidden md:table-cell text-muted-foreground">
                             {new Date(sub.submittedAt).toLocaleDateString("en-ZA", {
                               year: "numeric",
                               month: "short",

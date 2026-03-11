@@ -135,7 +135,7 @@ export function UserManagement() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between space-y-0 pb-4">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -167,13 +167,14 @@ export function UserManagement() {
               <p>No users found</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Brand</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead className="hidden sm:table-cell">Brand</TableHead>
+                  <TableHead className="hidden sm:table-cell">Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -203,8 +204,8 @@ export function UserManagement() {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell>{brandLabel(user.brand)}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
+                    <TableCell className="hidden sm:table-cell">{brandLabel(user.brand)}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
                       {new Date(user.createdAt).toLocaleDateString('en-ZA', {
                         year: 'numeric', month: 'short', day: 'numeric',
                       })}
@@ -223,6 +224,7 @@ export function UserManagement() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

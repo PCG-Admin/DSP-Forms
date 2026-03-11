@@ -133,7 +133,7 @@ export default function BrandSelectPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-2xl p-8">
+      <Card className="w-full max-w-2xl p-4 sm:p-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-foreground">Welcome</h1>
           <p className="text-sm text-muted-foreground mt-2">
