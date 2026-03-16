@@ -328,6 +328,8 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
         </CardContent>
       </Card>
 
+      <hr className="border-t-2 border-gray-400" />
+
       {/* Work Description */}
       <Card>
         <CardHeader>

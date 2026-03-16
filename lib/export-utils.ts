@@ -2162,7 +2162,7 @@ export async function exportSubmissionToPDF(sub: Submission, asBuffer?: boolean)
 
     // Extract fields with sensible defaults (match web form field names)
     const driverName = data.driverName || data.driversName || '';
-    const jobCardNumber = data.jobCardNumber || data.documentNo || '';
+    const jobCardNumber = (sub as any).documentNo || data.jobCardNumber || data.documentNo || '';
     const machineVehicle = data.machineVehicle || data.machine || data.vehicle || '';
     const registrationNumber = data.machineRegNumber || data.registrationNumber || data.regNo || '';
     const hourMeterKM = data.hourMeterKmReading || data.hourMeterKM || data.hourMeter || data.kmReading || '';
@@ -2200,24 +2200,32 @@ export async function exportSubmissionToPDF(sub: Submission, asBuffer?: boolean)
       columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 'auto' } },
       margin: { left: 14, right: 14 },
     });
-    y = (doc as any).lastAutoTable.finalY + 5;
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    // Divider line
+    doc.setDrawColor(100, 100, 100);
+    doc.setLineWidth(0.5);
+    doc.line(14, y, pageWidth - 14, y);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.2);
+    y += 8;
 
     // ------------------------------------------------------------------------
-    // Table 2: Work performed (3 columns)
+    // Table 2: Work performed (2 columns, stacked rows)
     // ------------------------------------------------------------------------
     if (y > pageHeight - 40) { doc.addPage(); y = 20; }
     (doc as any).autoTable({
       startY: y,
-      head: [['Work Performed', '', '']],
-      body: [[
-        `Description:\n${descriptionOfWork}`,
-        `Test performed and result:\n${testPerformed}`,
-        `Job completed and safe to use:\n${jobCompletedSafe}`
-      ]],
+      head: [['Work Performed', '']],
+      body: [
+        ['Description:', descriptionOfWork],
+        ['Test performed and result:', testPerformed],
+        ['Job completed and safe to use:', jobCompletedSafe],
+      ],
       theme: 'grid',
       headStyles: { fillColor: [34, 100, 54], textColor: 255, fontSize: 9, halign: 'left' },
-      styles: { fontSize: 8, cellPadding: 4, minCellHeight: 20 },
-      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 'auto' } },
+      styles: { fontSize: 8, cellPadding: 4, minCellHeight: 14 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: 'auto' } },
       margin: { left: 14, right: 14 },
     });
     y = (doc as any).lastAutoTable.finalY + 5;
