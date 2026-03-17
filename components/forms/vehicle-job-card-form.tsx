@@ -35,6 +35,7 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
     hourMeterKmReading: "",
     date: new Date().toISOString().split("T")[0],
     categoryOfWork: "",
+    summaryOfWorkCompleted: "",
     descriptionOfWork: "",
     testPerformedAndResult: "",
     jobCompletedAndSafe: "",
@@ -232,6 +233,9 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
               brand,
               submittedBy: formData.driverName,
               submittedAt: new Date().toISOString(),
+              categoryOfWork: formData.categoryOfWork,
+              summaryOfWorkCompleted: formData.summaryOfWorkCompleted,
+              descriptionOfWork: formData.descriptionOfWork,
               hasDefects: false,
               defectDetails: "", // No defect details for this form
               inspectionData: {
@@ -325,6 +329,7 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
             <Label htmlFor="categoryOfWork">Category of work</Label>
             <Input id="categoryOfWork" value={formData.categoryOfWork} onChange={e => setFormData(p => ({ ...p, categoryOfWork: e.target.value }))} placeholder="e.g. Repair, Maintenance" />
           </div>
+
         </CardContent>
       </Card>
 
@@ -336,6 +341,10 @@ export function VehicleJobCardForm({ brand }: VehicleJobCardFormProps) {
           <CardTitle className="text-base">Work Performed</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="summaryOfWorkCompleted">Summary of work completed</Label>
+            <Input id="summaryOfWorkCompleted" value={formData.summaryOfWorkCompleted} onChange={e => setFormData(p => ({ ...p, summaryOfWorkCompleted: e.target.value }))} />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="descriptionOfWork">Description of work performed</Label>
             <Textarea id="descriptionOfWork" value={formData.descriptionOfWork} onChange={e => setFormData(p => ({ ...p, descriptionOfWork: e.target.value }))} rows={4} />
