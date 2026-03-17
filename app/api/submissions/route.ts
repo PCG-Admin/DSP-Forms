@@ -170,6 +170,9 @@ export async function POST(request: Request) {
         formData.append('submittedAt', new Date().toISOString())
         formData.append('hasDefects', body.hasDefects ? 'Yes' : 'No')
         formData.append('defectDetails', body.hasDefects && body.data?.defectDetails ? body.data.defectDetails : '')
+        formData.append('categoryOfWork', body.data?.categoryOfWork || '')
+        formData.append('summaryOfWorkCompleted', body.data?.summaryOfWorkCompleted || '')
+        formData.append('descriptionOfWork', body.data?.descriptionOfWork || '')
         formData.append('mergedPdf[name]', 'merged-documents.pdf')
         formData.append('mergedPdf[mime]', 'application/pdf')
         formData.append(
