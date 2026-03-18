@@ -112,7 +112,7 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
 
         const submissionData = {
             formType: "cintasign-harvesting",
-            formTitle: "Cintasign Harvesting Sheet",
+            formTitle: brand === 'ringomode' ? "Ringomode Harvesting Sheet" : "Cintasign Harvesting Sheet",
             submittedBy: "Harvest Manager",
             hasDefects: false,
             brand: brand,
@@ -134,7 +134,7 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
             if (makeWebhookUrl) {
                 const formBody = new URLSearchParams()
                 formBody.append('data', JSON.stringify({
-                    formTitle: "Cintasign Harvesting Sheet",
+                    formTitle: brand === 'ringomode' ? "Ringomode Harvesting Sheet" : "Cintasign Harvesting Sheet",
                     documentNo: formData.automaticNumber,
                     brand,
                     submittedBy: "Harvest Manager",
@@ -177,7 +177,7 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
                         <BrandLogo brand={brand} width={160} height={50} />
                     </div>
                     <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
-                    <CardTitle className="text-2xl text-foreground">Cintasign Harvesting Sheet</CardTitle>
+                    <CardTitle className="text-2xl text-foreground">{brand === 'ringomode' ? 'Ringomode Harvesting Sheet' : 'Cintasign Harvesting Sheet'}</CardTitle>
                     <CardDescription>Document Ref: CINT/HARV/001 | Rev. 1 | 01.03.2025</CardDescription>
                 </CardHeader>
             </Card>
@@ -227,7 +227,7 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>Cintasign Unit</Label>
+                        <Label>{brand === 'ringomode' ? 'Ringomode Unit' : 'Cintasign Unit'}</Label>
                         <Select 
                             value={formData.unit} 
                             onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v }))}

@@ -90,7 +90,7 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
 
         const submissionData = {
             formType: "cintasign-loading",
-            formTitle: "Cintasign Loading Sheet",
+            formTitle: brand === 'ringomode' ? "Ringomode Loading Sheet" : "Cintasign Loading Sheet",
             submittedBy: "Loading Supervisor",
             hasDefects: false,
             brand: brand,
@@ -112,7 +112,7 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
             if (makeWebhookUrl) {
                 const formBody = new URLSearchParams()
                 formBody.append('data', JSON.stringify({
-                    formTitle: "Cintasign Loading Sheet",
+                    formTitle: brand === 'ringomode' ? "Ringomode Loading Sheet" : "Cintasign Loading Sheet",
                     documentNo: formData.automaticNumber,
                     brand,
                     submittedBy: "Loading Supervisor",
@@ -155,7 +155,7 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
                         <BrandLogo brand={brand} width={160} height={50} />
                     </div>
                     <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
-                    <CardTitle className="text-2xl text-foreground">Cintasign Loading Sheet</CardTitle>
+                    <CardTitle className="text-2xl text-foreground">{brand === 'ringomode' ? 'Ringomode Loading Sheet' : 'Cintasign Loading Sheet'}</CardTitle>
                     <CardDescription>Document Ref: CINT/LOAD/001 | Rev. 1 | 01.03.2025</CardDescription>
                 </CardHeader>
             </Card>
@@ -225,7 +225,7 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
                     {/* Second row: Cintasign Unit, Operator, Fleet No, Shift */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <div className="space-y-2">
-                            <Label htmlFor="unit">Cintasign Unit</Label>
+                            <Label htmlFor="unit">{brand === 'ringomode' ? 'Ringomode Unit' : 'Cintasign Unit'}</Label>
                             <Select 
                                 value={formData.unit} 
                                 onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v }))}

@@ -98,7 +98,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
 
         const submissionData = {
             formType: "cintasign-shorthaul",
-            formTitle: "Cintasign Shorthaul Trip Sheet",
+            formTitle: brand === 'ringomode' ? "Ringomode Shorthaul Trip Sheet" : "Cintasign Shorthaul Trip Sheet",
             submittedBy: "Trip Manager",
             hasDefects: false,
             brand: brand,
@@ -120,7 +120,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
             if (makeWebhookUrl) {
                 const formBody = new URLSearchParams()
                 formBody.append('data', JSON.stringify({
-                    formTitle: "Cintasign Shorthaul Trip Sheet",
+                    formTitle: brand === 'ringomode' ? "Ringomode Shorthaul Trip Sheet" : "Cintasign Shorthaul Trip Sheet",
                     documentNo: formData.automaticNumber,
                     brand,
                     submittedBy: "Trip Manager",
@@ -163,7 +163,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                         <BrandLogo brand={brand} width={160} height={50} />
                     </div>
                     <div className="mb-1 text-xs font-medium text-muted-foreground">HSE Management System</div>
-                    <CardTitle className="text-2xl text-foreground">Cintasign Shorthaul Trip Sheet</CardTitle>
+                    <CardTitle className="text-2xl text-foreground">{brand === 'ringomode' ? 'Ringomode Shorthaul Trip Sheet' : 'Cintasign Shorthaul Trip Sheet'}</CardTitle>
                     <CardDescription>Document Ref: CINT/LOG/001 | Rev. 1 | 01.01.2025</CardDescription>
                 </CardHeader>
             </Card>
@@ -209,7 +209,7 @@ export function CintasignShorthaulForm({ brand }: CintasignShorthaulFormProps) {
                         <Input value={formData.automaticNumber} readOnly className="bg-muted" />
                     </div>
                     <div className="space-y-2">
-                        <Label>Cintasign Unit</Label>
+                        <Label>{brand === 'ringomode' ? 'Ringomode Unit' : 'Cintasign Unit'}</Label>
                         <Select 
                             value={formData.unit} 
                             onValueChange={(v) => setFormData(prev => ({ ...prev, unit: v }))}

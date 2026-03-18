@@ -157,7 +157,7 @@ export function UserHomePage({ brand }: UserHomePageProps) {
                     <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
-                    <CardTitle className="text-lg text-foreground">{form.title}</CardTitle>
+                    <CardTitle className="text-lg text-foreground">{brand === 'ringomode' ? form.title.replace('Cintasign', 'Ringomode') : form.title}</CardTitle>
                     <CardDescription className="text-xs font-medium uppercase tracking-wide text-primary">
                       {form.subtitle}
                     </CardDescription>
