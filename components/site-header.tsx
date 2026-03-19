@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { ClipboardList, LayoutDashboard, LogOut, User, Users } from "lucide-react"
+import { ClipboardList, LayoutDashboard, LogOut, ShieldAlert, User, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface SiteHeaderProps {
@@ -83,6 +83,20 @@ export function SiteHeader({ role }: SiteHeaderProps) {
                 <Link href="/admin/users">
                   <Users className="h-4 w-4" />
                   <span className="hidden sm:inline">Users</span>
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className={cn(
+                  "gap-2 text-muted-foreground",
+                  pathname === "/admin/audit-logs" && "bg-primary/10 text-primary"
+                )}
+              >
+                <Link href="/admin/audit-logs">
+                  <ShieldAlert className="h-4 w-4" />
+                  <span className="hidden sm:inline">Audit Log</span>
                 </Link>
               </Button>
             </>

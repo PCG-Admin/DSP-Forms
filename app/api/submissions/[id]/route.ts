@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { Submission } from '@/lib/types'
+import { logAuditEvent } from '@/lib/audit-logger'
 
 const ALLOWED_BRANDS = ['ringomode', 'cintasign'] as const
 
@@ -139,6 +140,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Fetch submission details before deleting for the audit log
+    const { data: submission } = await supabase
+      .from('submissions')
+      .select('form_title, form_type, submitted_by, document_no')
+      .eq('id', id)
+      .single()
+
     const { error } = await supabase
       .from('submissions')
       .delete()
@@ -148,6 +156,19 @@ export async function DELETE(
       console.error('Supabase DELETE error:', error)
       return NextResponse.json({ error: 'Failed to delete submission' }, { status: 500 })
     }
+
+    await logAuditEvent({
+      adminId: user.id,
+      adminEmail: user.email,
+      action: 'DELETE_SUBMISSION',
+      targetId: id,
+      details: {
+        formTitle: submission?.form_title,
+        formType: submission?.form_type,
+        submittedBy: submission?.submitted_by,
+        documentNo: submission?.document_no,
+      },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { exportSubmissionToPDF } from '@/lib/export-utils'
 import { rateLimit, STANDARD_LIMIT, getClientIp } from '@/lib/rate-limit'
 import { logSecurityEvent } from '@/lib/security-logger'
+import { logAuditEvent } from '@/lib/audit-logger'
 
 const ALLOWED_BRANDS = ['ringomode', 'cintasign'] as const
 
@@ -196,6 +197,14 @@ export async function POST(request: Request) {
         console.error("❌ FETCH FAILED:", err)
       }
     }
+
+    await logAuditEvent({
+      adminId: user.id,
+      adminEmail: user.email,
+      action: 'SUBMIT_FORM',
+      targetId: inserted.id,
+      details: { formTitle: body.formTitle, formType: body.formType, submittedBy: body.submittedBy, documentNo, hasDefects: body.hasDefects || false },
+    })
 
     return NextResponse.json({ success: true, id: inserted.id }, { status: 201 })
 

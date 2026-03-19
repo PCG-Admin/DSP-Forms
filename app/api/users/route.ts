@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { rateLimit, STRICT_LIMIT, getClientIp } from '@/lib/rate-limit'
 import { logSecurityEvent } from '@/lib/security-logger'
+import { logAuditEvent } from '@/lib/audit-logger'
 
 const ALLOWED_BRANDS = ['ringomode', 'cintasign'] as const
 const ALLOWED_ROLES  = ['admin', 'user'] as const
@@ -145,6 +146,7 @@ export async function POST(request: Request) {
     }
 
     logSecurityEvent({ event: 'USER_CREATED', ip, userId: adminUser.id, details: `Created user ${email} with role ${role ?? 'user'}` })
+    await logAuditEvent({ adminId: adminUser.id, adminEmail: adminUser.email, action: 'CREATE_USER', targetId: userId, targetEmail: email, details: { role: role ?? 'user', brand: brand ?? null } })
     return NextResponse.json({ success: true, id: userId }, { status: 201 })
   } catch (err: any) {
     console.error('[POST /api/users] Unexpected error:', err)
@@ -154,7 +156,8 @@ export async function POST(request: Request) {
 
 // ─── PATCH /api/users ─────────────────────────────────────────────────────────
 export async function PATCH(request: Request) {
-  if (!(await requireAdmin())) {
+  const adminUser = await requireAdmin()
+  if (!adminUser) {
     logSecurityEvent({ event: 'UNAUTHORIZED_ACCESS', ip: 'unknown', path: '/api/users', details: 'PATCH without admin role' })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -180,6 +183,7 @@ export async function PATCH(request: Request) {
   if (password) {
     const { error: authError } = await admin.auth.admin.updateUserById(id, { password })
     if (authError) return NextResponse.json({ error: authError.message }, { status: 500 })
+    await logAuditEvent({ adminId: adminUser?.id, adminEmail: adminUser?.email, action: 'CHANGE_PASSWORD', targetId: id })
     if (!role && !brand) return NextResponse.json({ success: true })
   }
 
@@ -190,6 +194,8 @@ export async function PATCH(request: Request) {
   if (Object.keys(profileUpdates).length > 0) {
     const { error } = await admin.from('users').update(profileUpdates).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (role)  await logAuditEvent({ adminId: adminUser?.id, adminEmail: adminUser?.email, action: 'CHANGE_ROLE',  targetId: id, details: { newRole: role } })
+    if (brand) await logAuditEvent({ adminId: adminUser?.id, adminEmail: adminUser?.email, action: 'CHANGE_BRAND', targetId: id, details: { newBrand: brand } })
   }
 
   return NextResponse.json({ success: true })
@@ -216,5 +222,6 @@ export async function DELETE(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   logSecurityEvent({ event: 'USER_DELETED', ip, userId: adminUser.id, details: `Deleted user id=${id}` })
+  await logAuditEvent({ adminId: adminUser.id, adminEmail: adminUser.email, action: 'DELETE_USER', targetId: id })
   return NextResponse.json({ success: true })
 }
