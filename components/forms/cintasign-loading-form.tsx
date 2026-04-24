@@ -78,6 +78,17 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
         fetchNextNumber()
     }, [])
 
+    // Auto-populate day of the week from the selected date
+    useEffect(() => {
+        if (formData.date) {
+            const d = new Date(formData.date + "T12:00:00")
+            if (!isNaN(d.getTime())) {
+                const dayName = d.toLocaleDateString("en-US", { weekday: "long" })
+                setFormData(prev => prev.day === dayName ? prev : { ...prev, day: dayName })
+            }
+        }
+    }, [formData.date])
+
     const handleEntryChange = (index: number, field: keyof LoadingEntry, value: string) => {
         const newEntries = [...formData.entries]
         newEntries[index] = { ...newEntries[index], [field]: value }
@@ -187,6 +198,7 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
                                 id="date"
                                 type="date"
                                 required
+                                className="text-left"
                                 value={formData.date}
                                 onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
                             />
@@ -195,9 +207,9 @@ export function CintasignLoadingForm({ brand }: CintasignLoadingFormProps) {
                             <Label htmlFor="day">Day</Label>
                             <Input
                                 id="day"
-                                required
                                 value={formData.day}
-                                onChange={e => setFormData(prev => ({ ...prev, day: e.target.value }))}
+                                readOnly
+                                className="bg-muted"
                             />
                         </div>
                         <div className="space-y-2">

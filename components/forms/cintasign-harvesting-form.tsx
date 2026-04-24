@@ -86,6 +86,17 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
         fetchNextNumber()
     }, [])
 
+    // Auto-populate day of the week from the selected date
+    useEffect(() => {
+        if (formData.date) {
+            const d = new Date(formData.date + "T12:00:00")
+            if (!isNaN(d.getTime())) {
+                const dayName = d.toLocaleDateString("en-US", { weekday: "long" })
+                setFormData(prev => prev.day === dayName ? prev : { ...prev, day: dayName })
+            }
+        }
+    }, [formData.date])
+
     // Calculate grand total of all "Total Tons" fields
     const grandTotalTons = useMemo(() => {
         return formData.fleetEntries.reduce((sum, entry) => {
@@ -203,11 +214,11 @@ export function CintasignHarvestingForm({ brand }: CintasignHarvestingFormProps)
                 <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-5">
                     <div className="space-y-2">
                         <Label>Date</Label>
-                        <Input required type="date" value={formData.date} onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))} />
+                        <Input required type="date" className="text-left" value={formData.date} onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))} />
                     </div>
                     <div className="space-y-2">
                         <Label>Day</Label>
-                        <Input required value={formData.day} onChange={e => setFormData(prev => ({ ...prev, day: e.target.value }))} />
+                        <Input value={formData.day} readOnly className="bg-muted" />
                     </div>
                     <div className="space-y-2">
                         <Label>Farm</Label>

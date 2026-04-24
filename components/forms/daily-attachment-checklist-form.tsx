@@ -326,7 +326,7 @@ export function DailyAttachmentChecklistForm({ brand }: DailyAttachmentChecklist
 
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
-            <Input id="date" type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
+            <Input id="date" type="date" className="text-left" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
           </div>
 
           <div className="space-y-2">

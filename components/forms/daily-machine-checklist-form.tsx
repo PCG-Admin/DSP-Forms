@@ -382,7 +382,7 @@ export function DailyMachineChecklistForm({ brand }: DailyMachineChecklistFormPr
 
           <div className="space-y-2"><Label htmlFor="registrationNumber">Registration / Machine number</Label><Input id="registrationNumber" value={formData.registrationNumber} onChange={e => setFormData(p=>({...p, registrationNumber:e.target.value}))} placeholder="e.g. ABC123" /></div>
           <div className="space-y-2"><Label htmlFor="week">Week</Label><Input id="week" value={formData.week} onChange={e => setFormData(p=>({...p, week:e.target.value}))} placeholder="e.g. 12" /></div>
-          <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" type="date" value={formData.date} onChange={e => setFormData(p=>({...p, date:e.target.value}))} /></div>
+          <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" type="date" className="text-left" value={formData.date} onChange={e => setFormData(p=>({...p, date:e.target.value}))} /></div>
           <div className="space-y-2"><Label htmlFor="kmsHrs">Kms / Hrs</Label><Input id="kmsHrs" value={formData.kmsHrs} onChange={e => setFormData(p=>({...p, kmsHrs:e.target.value}))} placeholder="e.g. 1250" /></div>
         </CardContent>
       </Card>
