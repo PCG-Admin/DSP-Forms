@@ -44,14 +44,14 @@ export default function LoginPage() {
               alt="DSP Logo"
               width={90}
               height={30}
-              className="object-contain h-10 sm:h-12 w-auto"
+              className="object-contain h-10 sm:h-16 w-auto"
             />
             <Image
               src="/images/Mindrift_Logo.jpg"
               alt="Mindrift Logo"
               width={90}
               height={30}
-              className="object-contain h-10 sm:h-12 w-auto"
+              className="object-contain h-10 sm:h-16 w-auto"
             />
           </div>
           <div>
