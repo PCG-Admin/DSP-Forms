@@ -297,26 +297,26 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
   const isSelected = (status: CheckStatus) => value === status
 
   return (
-    <div className="grid grid-cols-[1fr_auto_auto] items-center border-b border-gray-200 last:border-0">
-      <div className="py-3 pr-4 border-r border-gray-200">
+    <div className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto] sm:items-center border-b border-gray-200 last:border-0">
+      <div className="py-2 px-3 sm:py-3 sm:pr-4 sm:pl-0 sm:border-r sm:border-gray-200">
         <span className="text-sm font-medium text-foreground">{item}</span>
       </div>
-      <div className="py-3 px-4 border-r border-gray-200 bg-gray-50 flex justify-center w-[150px]">
+      <div className="py-2 px-3 sm:py-3 sm:px-4 bg-gray-50 sm:border-r sm:border-gray-200 flex justify-center sm:w-[150px]">
         <Image
           src={iconSrc}
           alt={item}
           width={150}
           height={150}
-          className="object-contain"
+          className="object-contain h-20 w-auto sm:h-[150px] sm:w-[150px]"
         />
       </div>
-      <div className="py-3 pl-4 flex items-center gap-2">
+      <div className="py-2 px-3 sm:py-3 sm:pl-4 flex items-center gap-2 w-full sm:w-auto">
         <Button
           type="button"
           variant={isSelected("ok") ? "default" : "outline"}
           size="sm"
           onClick={() => onChange(isSelected("ok") ? null : "ok")}
-          className={`w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}
+          className={`flex-1 sm:flex-none sm:w-16 ${isSelected("ok") ? "bg-green-600 hover:bg-green-700" : ""}`}
         >
           OK
         </Button>
@@ -325,7 +325,7 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
           variant={isSelected("def") ? "default" : "outline"}
           size="sm"
           onClick={() => onChange(isSelected("def") ? null : "def")}
-          className={`w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}
+          className={`flex-1 sm:flex-none sm:w-16 ${isSelected("def") ? "bg-red-600 hover:bg-red-700" : ""}`}
         >
           DEF
         </Button>
@@ -334,7 +334,7 @@ function ItemRow({ item, value, onChange, iconSrc }: ItemRowProps) {
           variant={isSelected("na") ? "default" : "outline"}
           size="sm"
           onClick={() => onChange(isSelected("na") ? null : "na")}
-          className={`w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}
+          className={`flex-1 sm:flex-none sm:w-16 ${isSelected("na") ? "bg-gray-600 hover:bg-gray-700" : ""}`}
         >
           N/A
         </Button>

@@ -35,29 +35,31 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-4 mb-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md shadow-sm">
+        <CardHeader className="text-center space-y-3 pb-4">
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
             <Image
               src="/images/dsp-logo.png"
               alt="DSP Logo"
-              width={120}
-              height={40}
-              className="object-contain"
+              width={90}
+              height={30}
+              className="object-contain h-10 sm:h-12 w-auto"
             />
             <Image
               src="/images/Mindrift_Logo.jpg"
               alt="Mindrift Logo"
-              width={120}
-              height={40}
-              className="object-contain"
+              width={90}
+              height={30}
+              className="object-contain h-10 sm:h-12 w-auto"
             />
           </div>
-          <CardTitle className="text-2xl">Sign In</CardTitle>
-          <CardDescription>Enter your credentials to access the system</CardDescription>
+          <div>
+            <CardTitle className="text-xl sm:text-2xl">Sign In</CardTitle>
+            <CardDescription className="mt-1 text-sm">Enter your credentials to access the system</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="p-3 text-sm bg-red-50 border border-red-200 text-red-600 rounded">
