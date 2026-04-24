@@ -40,7 +40,7 @@ export default function BrandSelectPage() {
 
       if (userData?.brand) {
         console.log('[BrandSelect] User already has brand, redirecting to home')
-        router.push('/')
+        window.location.href = '/'
       } else {
         setLoading(false)
       }
@@ -116,11 +116,11 @@ export default function BrandSelectPage() {
     toast.success(`Brand set to ${brand}`)
     console.log('[BrandSelect] All good, redirecting to home')
 
-    // Use a small timeout to ensure the cookie/db propagate
+    // Full page reload so middleware re-runs with the fresh brand value
+    // (router.push can be intercepted by the SW and serve a stale cached /)
     setTimeout(() => {
-      router.push('/')
-      router.refresh()
-    }, 500)
+      window.location.href = '/'
+    }, 300)
   }
 
   if (loading) {

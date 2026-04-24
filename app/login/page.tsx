@@ -25,8 +25,8 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      router.push('/')
-      router.refresh()
+      // Full reload so middleware re-runs and SW doesn't serve a stale page
+      window.location.href = '/'
     } catch (err: any) {
       setError(err.message)
     } finally {
