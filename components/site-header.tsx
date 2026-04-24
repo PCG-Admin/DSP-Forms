@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { ClipboardList, LayoutDashboard, LogOut, ShieldAlert, User, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { OfflineIndicator } from "@/components/offline-indicator"
 
 interface SiteHeaderProps {
   role: "user" | "admin"
@@ -37,6 +38,10 @@ export function SiteHeader({ role }: SiteHeaderProps) {
               className="object-contain"
             />
           </Link>
+        </div>
+
+        <div className="flex-1 flex justify-center px-2">
+          <OfflineIndicator />
         </div>
 
         <nav className="flex items-center gap-1">
