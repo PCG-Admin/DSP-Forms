@@ -12,6 +12,33 @@ body {
   }
 }
 
+/* Normalize native date inputs across iOS Safari, Android, and desktop */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 2.5rem;
+  display: block;
+  width: 100%;
+}
+
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  margin-left: auto;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
 @layer base {
   :root {
     --background: 140 20% 97%;
