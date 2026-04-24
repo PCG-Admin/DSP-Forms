@@ -55,6 +55,23 @@ export function UserHomePage({ brand }: UserHomePageProps) {
   const supabase = createClient()
 
   useEffect(() => {
+    const CACHE_KEY = 'dsp-forms-list'
+
+    // Load from localStorage cache first so the page works offline
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = window.localStorage.getItem(CACHE_KEY)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setForms(parsed)
+            setFilteredForms(parsed)
+            setLoading(false)
+          }
+        }
+      } catch {}
+    }
+
     async function loadForms() {
       const { data, error } = await supabase
         .from('forms')
@@ -64,11 +81,18 @@ export function UserHomePage({ brand }: UserHomePageProps) {
 
       if (error) {
         console.error('Error loading forms:', error)
-      } else {
-        setForms(data || [])
-        setFilteredForms(data || [])
+        setLoading(false)
+        return
       }
+
+      const list = data || []
+      setForms(list)
+      setFilteredForms(list)
       setLoading(false)
+
+      if (typeof window !== 'undefined' && list.length > 0) {
+        try { window.localStorage.setItem(CACHE_KEY, JSON.stringify(list)) } catch {}
+      }
     }
     loadForms()
   }, [supabase])

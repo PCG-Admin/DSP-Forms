@@ -112,7 +112,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     }
     const handleOffline = () => {
       setIsOnline(false)
-      toast.warning('You are offline — submissions will be saved locally')
+      toast.warning('You are offline')
     }
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)

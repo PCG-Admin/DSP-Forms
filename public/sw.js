@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'dsp-v3'
+const CACHE_VERSION = 'dsp-v4'
 const PAGE_CACHE = `${CACHE_VERSION}-pages`
 const STATIC_CACHE = `${CACHE_VERSION}-static`
 const APP_SHELL = ['/', '/login', '/manifest.json']
@@ -91,9 +91,10 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Static assets — cache-first (immutable hashed files)
+  // Static assets — cache-first (immutable hashed files + optimized images)
   if (
     url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/_next/image') ||
     url.pathname.startsWith('/images/') ||
     /\.(?:js|css|woff2?|ttf|eot|png|jpe?g|svg|gif|webp|ico)$/i.test(url.pathname)
   ) {
