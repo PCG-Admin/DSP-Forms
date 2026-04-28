@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'dsp-v5'
+const CACHE_VERSION = 'dsp-v6'
 const PAGE_CACHE = `${CACHE_VERSION}-pages`
 const STATIC_CACHE = `${CACHE_VERSION}-static`
 const APP_SHELL = ['/', '/login', '/manifest.json']

@@ -116,9 +116,28 @@ export function UserHomePage({ brand }: UserHomePageProps) {
         try { router.prefetch(url) } catch {}
         fetch(url, { credentials: 'include' }).catch(() => {})
       })
-      // Also fetch brand logos so they appear offline
-      ;['/images/ringomode-logo.png', '/images/cintasign-logo.jpg', '/images/dsp-logo.png'].forEach((src) => {
+
+      // Pre-cache every static image in /public/images so inspection icons + logos work offline
+      const imageFiles = [
+        'Mindrift_Logo.jpg','air-conditioner.png','air-fuel-leaks.png','air-pre-cleaner.png','all-excess-loose-debris.png',
+        'anchor-points.png','bail-lever.png','battery.png','bonnet-retaining-catch.png','boom-structure.png','cabs.png',
+        'cintasign-logo.jpg','clutch.png','communication.png','cutting-bar.png','differentials.png','dsp-logo.png',
+        'emergency-triangle.png','escape-hatch.png','exhaust.png','fan-belt.png','fire-extinguisher.png','fire-system.png',
+        'foot-brake.png','fuel-leaks.png','fuel-oil-levels.png','gauges.png','grease.png','grill.png','hand-brake.png',
+        'harvester-head.png','hooters.png','hydraulic-controls.png','hydraulic-cylinders.png','hydraulic-hoses.png',
+        'landing-gear.png','led.png','license2.png','mirrors2.png','mud-flap.png','oil-fluid-air-level.png',
+        'protective-structure.png','radiator.png','ringomode-logo.png','rotating-light.png','safety-belt.png','seats.png',
+        'steering-column.png','steps-and-rails.png','tie-down.png','tow-hitch.png','tracks-sprockets.png','types-spares.png',
+        'wheel-nut.png','winch.png','wipes.png','wiring.png',
+      ]
+      imageFiles.forEach((file) => {
+        const src = `/images/${file}`
+        // Fetch raw file
         fetch(src).catch(() => {})
+        // Fetch Next.js optimized variants used in forms (most common widths)
+        ;[150, 300, 384].forEach((w) => {
+          fetch(`/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=75`).catch(() => {})
+        })
       })
     })
   }, [forms, router])
