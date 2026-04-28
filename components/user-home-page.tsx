@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,6 +54,7 @@ export function UserHomePage({ brand }: UserHomePageProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     const CACHE_KEY = 'dsp-forms-list'
@@ -96,6 +98,30 @@ export function UserHomePage({ brand }: UserHomePageProps) {
     }
     loadForms()
   }, [supabase])
+
+  // Pre-cache every form page (HTML + RSC) and brand logos so they work offline
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.onLine || forms.length === 0) return
+
+    const idle = (cb: () => void) => {
+      const w = window as any
+      if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(cb, { timeout: 3000 })
+      else setTimeout(cb, 500)
+    }
+
+    idle(() => {
+      // Prime SW cache with each form's HTML for offline fallback navigation
+      forms.forEach((form) => {
+        const url = `/${form.form_type}`
+        try { router.prefetch(url) } catch {}
+        fetch(url, { credentials: 'include' }).catch(() => {})
+      })
+      // Also fetch brand logos so they appear offline
+      ;['/images/ringomode-logo.png', '/images/cintasign-logo.jpg', '/images/dsp-logo.png'].forEach((src) => {
+        fetch(src).catch(() => {})
+      })
+    })
+  }, [forms, router])
 
   // Filter forms when search query changes
   useEffect(() => {
